@@ -387,6 +387,16 @@ def build_library(tracks, min_seconds=60, playlists=None, ready_color=None,
     for t in tracks:
         for mt in t['mytags']:
             bank_order.setdefault(mt['cat'], mt['catseq'])
+    # Every group and tag rekordbox has, used or not, so a new tag can be
+    # chosen before any track carries it.
+    try:
+        import rekordbox as _rb
+        for cat, seq, names in _rb.load_mytag_groups():
+            bank_order.setdefault(cat, seq)
+            for n in names:
+                bank_counts.setdefault(cat, {}).setdefault(n, 0)
+    except Exception:
+        pass                    # the tags on the tracks still give the rest
     for s in songs:
         for cat, names in s['banks'].items():
             for n in names:
@@ -446,11 +456,12 @@ def build_library(tracks, min_seconds=60, playlists=None, ready_color=None,
     if guess['timing']:
         present = [t['name'] for b in banks if b['name'] == guess['timing']
                    for t in b['tags']]
-        lower = {n.lower(): n for n in present}
-        for canonical in TIMING_ARC:               # the usual running order
-            if canonical.lower() in lower:
-                arc.append(lower.pop(canonical.lower()))
-        arc += sorted(lower.values())              # anything of your own, after
+        arc = order_arc(present)
+        # The arc group reads best in running order, not alphabetically.
+        for b in banks:
+            if b['name'] == guess['timing']:
+                rank = {n: i for i, n in enumerate(arc)}
+                b['tags'].sort(key=lambda t: rank.get(t['name'], len(rank)))
 
     return {'tracks': songs, 'banks': banks, 'genres': cloud, 'follows': follows,
             'families': families, 'playlists': playlists or [],
@@ -466,8 +477,40 @@ def build_library(tracks, min_seconds=60, playlists=None, ready_color=None,
                               key=lambda x: -x['count'])}
 
 
-# The arc of a set. If a TIMING group exists, this is its natural order.
-TIMING_ARC = ['Openers', 'Warmup', 'Filler', 'Peak Hour', 'Closing', 'Outro']
+# The arc of a set, as STAGES rather than names. Whatever a library calls its
+# timing tags — "Openers" or "Intro", "Peak Hour" or "Prime time" — a tag is
+# placed by the words in it, so the set builder knows the running order of
+# a vocabulary it has never seen.
+# ⚠ This used to be one person's six tag names, literally. Any other library
+# got no openers and an arc in alphabetical order.
+ARC_STAGES = (
+    ('open',   ('open', 'intro', 'start', 'first')),
+    ('warm',   ('warm',)),
+    ('middle', ('middle', 'filler', 'main', 'build', 'groove')),
+    ('peak',   ('peak', 'prime', 'climax', 'banger')),
+    ('close',  ('clos', 'last')),
+    # ⚠ Not "after" (a kind of NIGHT in most vocabularies) nor a bare "end",
+    # which is inside "legend" and "weekend".
+    ('outro',  ('outro', 'ending')),
+)
+
+
+def arc_stage_of(name):
+    """The stage (0 = opening … 5 = outro) a timing tag's NAME places it
+    in, or None when nothing in it says."""
+    low = (name or '').lower()
+    for i, (_, words) in enumerate(ARC_STAGES):
+        if any(w in low for w in words):
+            return i
+    return None
+
+
+def order_arc(names):
+    """Timing tags in the order a night runs; any the words do not place
+    keep their own order after the ones they do."""
+    placed = [(arc_stage_of(n), i, n) for i, n in enumerate(names)]
+    known = sorted((s, i, n) for s, i, n in placed if s is not None)
+    return [n for _, _, n in known] + [n for s, _, n in placed if s is None]
 
 BPM_TIGHT = 0.03
 BPM_LOOSE = 0.06
@@ -528,14 +571,6 @@ def directions(ref, candidates, bank='MOOD', top=8):
 # "this is an opener" from energy or tempo would be inventing a signal that is
 # not in the data. Where the arc really lives is in the tags themselves, put
 # there by the person who knows. So the arc is READ, never computed.
-
-#: The arc, in the order a night runs. Matched case-insensitively against
-#: whatever the TIMING bank is actually called in this library.
-#: ⚠ Derived from TIMING_ARC, never written out again: the two must not drift.
-#: Leaving Filler out — the commonest TIMING tag in this library, 688 tracks —
-#: made arc_stage() report "no tag at all" for it, which in openers() ranks it
-#: ABOVE everything tagged Warmup.
-ARC_ORDER = tuple(n.lower() for n in TIMING_ARC)
 
 #: How much each ingredient counts when asking "does this belong here".
 #: Mood and family carry the most because they are what "feel" means; tempo
@@ -645,12 +680,17 @@ def feel_fit(track, feel, mood_bank='MOOD'):
 
 
 def arc_stage(track, timing_bank='TIMING'):
-    """Where in the night this track says it belongs, if it says at all."""
-    tags = [t.lower() for t in (track.get('banks') or {}).get(timing_bank, []) or []]
-    for i, name in enumerate(ARC_ORDER):
-        if name in tags:
-            return i, ARC_ORDER[i]
-    return None, ''
+    """Where in the night this track says it belongs, if it says at all:
+    (stage, tag) for its earliest timing tag, or (None, '').
+    ⚠ A middle tag ("Filler" — the commonest timing tag in one real library)
+    must count as a stage: reported as "no tag at all", openers() ranked it
+    ABOVE everything tagged as a warm-up."""
+    best = (None, '')
+    for tag in (track.get('banks') or {}).get(timing_bank, []) or []:
+        s = arc_stage_of(tag)
+        if s is not None and (best[0] is None or s < best[0]):
+            best = (s, tag)
+    return best
 
 
 def openers(tracks, style=None, type_bank='TYPE OF SET', timing_bank='TIMING',
@@ -673,7 +713,7 @@ def openers(tracks, style=None, type_bank='TYPE OF SET', timing_bank='TIMING',
             if style not in kinds:
                 continue
         idx, name = arc_stage(t, timing_bank)
-        tagged_opener = (name == 'openers')
+        tagged_opener = (idx == 0)
         # Without the tag a track can still open, but it goes below the ones
         # you have actually marked.
         rank = 0 if tagged_opener else (1 if idx is None else 2)

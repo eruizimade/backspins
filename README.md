@@ -39,6 +39,25 @@ works. On macOS, conversion falls back to the system's own `afconvert`.
 | **Teach** | Teach the library a tag ("is this Acid?") or an ordering ("which is more intense?") by answering a few questions. It analyses the audio itself (notes, key, chords, timbre, groove), learns from your answers and your existing tags, tells you how often it is right, and ranks the whole library for you to confirm. |
 | **Backups** | A copy of your library every hour it changes, kept by age. Also a rekordbox XML and readable JSON version that will outlive any change to rekordbox's encryption. |
 
+## Your words, not ours
+
+Backspin works with your own rekordbox vocabulary. It works out which MyTag
+group is the kind of night, which is the mood and which is the running order
+from what is in them, whatever you call them.
+
+Starting from nothing? The Inbox offers a **starter vocabulary**: 25 tags in
+four groups, plus three colours for the tagging workflow (NEW → GRID → READY).
+It was distilled from a library of 2,500 tracks tagged by hand for a year,
+keeping only the tags that actually told tracks apart. It only adds, and you
+can rename or delete any of it in rekordbox.
+
+| Group | Tags |
+|---|---|
+| Type of set | Rave, After, Sunset, Bar, Party, Family |
+| Mood | Dark, Hard, Acid, Psychedelic, Tribal, Groovy, Sexy, Happy, Euphoric, Emotional, Melancholic, Chill |
+| Timing | Opener, Warm-up, Middle, Peak, Closer |
+| Misc | Anthem, Tool |
+
 ## What it will never do
 
 These are guarantees, not intentions. They are enforced in the code:

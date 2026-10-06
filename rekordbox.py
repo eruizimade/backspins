@@ -281,6 +281,26 @@ def load_playlist_tree(db_path=None):
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
+def load_mytag_groups(db_path=None):
+    """Every MyTag group and its tags, used or not: [(group, seq, [tag, …])].
+
+    ⚠ The groups used to be derived from the tags tracks CARRY, so a tag with
+    no tracks yet — one just made in rekordbox, or a whole starter vocabulary
+    — never reached the tagger, which is the one place it could be used.
+    """
+    out = []
+    with open_library(db_path) as cur:
+        if cur is None:
+            return out
+        rows = cur.execute('SELECT ID, Name, Attribute, ParentID, Seq FROM djmdMyTag '
+                           'WHERE rb_local_deleted = 0 ORDER BY Seq').fetchall()
+    groups = [(str(r[0]), r[1] or '', r[4] or 0) for r in rows if r[2] == 1]
+    for gid, name, seq in groups:
+        out.append((name, seq, [r[1] or '' for r in rows
+                                if r[2] != 1 and str(r[3]) == gid]))
+    return out
+
+
 def load_playlists(db_path=None):
     """Ordinary playlists, with their tracks in order.
 

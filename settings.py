@@ -84,8 +84,9 @@ DEFAULTS = {
     # it" and only rekordbox marks it ready. Empty = use ready_color.
     'done_color': '',
     # Colour stamped on tracks imported into rekordbox from here: they have not
-    # been looked at yet, so they go where your first queue is.
-    'import_color': 'ADD',
+    # been looked at yet, so they go where your first queue is. NEW is the
+    # starter vocabulary's name for it (vocabulary.py).
+    'import_color': 'NEW',
     # Many DJs start the comment with the energy level ("6 - dark roller").
     # When off, the comment is left alone and no energy column appears.
     'energy_in_comment': True,
@@ -108,10 +109,6 @@ DEFAULTS = {
     # the Inbox: {"MOOD": ["Dark", "Acid", …], …}. Tags not listed (new ones)
     # keep rekordbox's order after the ones you placed.
     'tag_order': {},
-    # The phone's Inbox (cloud/): where it lives and the key only this Mac
-    # holds. Written by cloud/setup.sh; empty = no phone.
-    'cloud_url': '',
-    'cloud_token': '',
 }
 
 
@@ -132,15 +129,15 @@ def guess_banks(banks):
     kind = (cur.get('type_bank') or '').strip()
     ignored = {b.lower() for b in (cur.get('ignored_banks') or [])}
 
-    ARC_WORDS = ('warmup', 'warm up', 'peak', 'opener', 'closing', 'outro',
-                 'intro', 'filler', 'build', 'climax')
+    # The arc group is the one whose tags read as stages of a night — the same
+    # words the set builder orders them by, so the two cannot disagree.
+    from setbuilder import arc_stage_of
     usable = [b for b in (banks or []) if (b.get('name') or '').lower() not in ignored]
 
     if not timing:
         best, hits = '', 0
         for b in usable:
-            names = ' '.join(t['name'].lower() for t in (b.get('tags') or []))
-            k = sum(1 for w in ARC_WORDS if w in names)
+            k = sum(1 for t in (b.get('tags') or []) if arc_stage_of(t['name']) is not None)
             if k > hits:
                 best, hits = b['name'], k
         timing = best if hits >= 2 else ''

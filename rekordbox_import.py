@@ -279,7 +279,7 @@ def import_files(paths, color=None, db_path=None, log=None, dry_run=False):
 
     if color is None:
         cfg = settings.load()
-        color = (cfg.get('import_color') or 'ADD').strip()
+        color = (cfg.get('import_color') or 'NEW').strip()
 
     if not dry_run and rm.rekordbox_running():
         raise RuntimeError('Close rekordbox before importing.')

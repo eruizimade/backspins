@@ -1741,6 +1741,14 @@ class Handler(BaseHTTPRequestHandler):
             # the browser never has to ask twice.
             self._json({'groups': groups, 'quality': quality,
                         'ignored': sorted(dupes_ignored())})
+        elif path == '/api/vocabulary':
+            # The starter vocabulary, and how much of it this library lacks.
+            import vocabulary
+            try:
+                self._json(vocabulary.plan())
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 500)
+
         elif path == '/api/tagger/suggest':
             # ⚠ Server-side on purpose: the co-occurrence rule lives in one
             # place. Re-implementing it in the browser to save a local
@@ -2008,7 +2016,7 @@ class Handler(BaseHTTPRequestHandler):
                             'doneColor': (cfg.get('done_color')
                                           or cfg.get('ready_color') or '').strip(),
                             'readyColor': (cfg.get('ready_color') or '').strip(),
-                            'importColor': (cfg.get('import_color') or 'ADD').strip()})
+                            'importColor': (cfg.get('import_color') or 'NEW').strip()})
             except Exception as e:
                 self._json({'error': str(e)[:300]}, 500)
 
@@ -2847,6 +2855,22 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({'error': str(e)[:300]}, 500)
 
+
+        elif path == '/api/vocabulary/apply':
+            # Adds the starter MyTag groups and colour labels (vocabulary.py).
+            # Only adds; refuses while rekordbox is open, backs up first.
+            import vocabulary
+            try:
+                res = vocabulary.apply(with_colours=data.get('colours', True) is not False)
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 400)
+                return
+            with LOCK:
+                RB_ALL.clear()
+                RB_LIBRARY.clear()
+                bump_library_gen()
+            _SLOTS['val'] = None            # the colour labels may have new names
+            self._json(res)
 
         elif path == '/api/dupes/ignore':
             key = str(data.get('key') or '').strip()

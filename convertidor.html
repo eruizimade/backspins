@@ -1437,6 +1437,19 @@
   .inItem.gone{opacity:.45}
   .inPanel{padding:20px 30px 18px;display:flex;flex-direction:column;min-width:0}
   .inEmpty{color:var(--dim);font-size:14px;padding:40px 0}
+  .vcOffer{margin:10px 0 14px;max-width:460px;line-height:1.5;font-size:13px}
+  .vcPanel{width:min(720px,94vw)}
+  .vcIntro{padding:0 20px 10px;font-size:13px;color:var(--dim);line-height:1.5;border-bottom:1px solid var(--line)}
+  .vcGroup{margin:14px 0 4px}
+  .vcGroup h3{font-size:13px;margin:0 0 2px}
+  .vcGroup .about{font-size:12px;color:var(--faint);margin-bottom:6px}
+  .vcTags{display:flex;flex-wrap:wrap;gap:6px}
+  .vcTag{font-size:12.5px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);cursor:default}
+  .vcTag.have{opacity:.5}
+  .vcFoot{display:flex;align-items:center;gap:12px;padding:12px 20px 16px;border-top:1px solid var(--line)}
+  .vcFoot label{font-size:12.5px;color:var(--dim);display:flex;align-items:center;gap:6px}
+  .vcFoot .grow{flex:1}
+  .vcMsg{font-size:12.5px;color:var(--dim)}
   #inBody{display:flex;flex-direction:column;gap:16px;flex:1}
   .inTop{display:flex;gap:40px;align-items:center;flex-wrap:wrap}
   .inField{display:flex;align-items:center;gap:14px}
@@ -2113,6 +2126,26 @@
   </div>
 
   <!-- ══════════════ SETS ══════════════ -->
+  <!-- A starter vocabulary for a library with no MyTags (vocabulary.py). -->
+  <div class="phoneOverlay hidden" id="vcOverlay">
+    <div class="phonePanel vcPanel" role="dialog" aria-label="Starter vocabulary">
+      <div class="ppHead">
+        <h2>A vocabulary to start from</h2>
+        <button class="ppClose" id="vcClose" type="button" aria-label="Close">✕</button>
+      </div>
+      <div class="vcIntro">Four MyTag groups that every screen here understands — the kind
+        of night, the mood, where in the set — distilled from a library tagged by hand for a
+        year. It only adds: anything you already have stays as it is, and you can rename or
+        delete any of it in rekordbox later.</div>
+      <div class="ppBody" id="vcBody">Reading your library…</div>
+      <div class="vcFoot">
+        <label><input type="checkbox" id="vcColours" checked> Also name three colours for tagging</label>
+        <span class="grow vcMsg" id="vcMsg"></span>
+        <button type="button" id="vcApply">Add to rekordbox</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Tag the track that is playing, or add it to a playlist — from any
        screen, without going to Browse. Writes through the tagger's queue. -->
   <div class="phoneOverlay hidden" id="qtOverlay">
@@ -2945,7 +2978,7 @@
     var imp = p.imported;
     if (imp) {
       if (imp.added) c.appendChild(chip('added to rekordbox as ' +
-                                        (imp.color || 'ADD'), imp.added, true));
+                                        (imp.color || 'NEW'), imp.added, true));
       if (imp.skipped) c.appendChild(chip('already in rekordbox', imp.skipped));
     }
 
@@ -5462,7 +5495,8 @@
     var out = [];
     var b = t && t.banks;
     if (!b) return out;
-    ['MOOD', 'TIMING', 'FAMILIES'].forEach(function(cat){
+    // ⚠ The groups this library uses, not one person's group names.
+    [MOOD_BANK, TIMING_BANK, 'FAMILIES'].forEach(function(cat){
       (b[cat] || []).forEach(function(n){ out.push(cat + '|' + n); });
     });
     return out;
@@ -5501,7 +5535,7 @@
   function setProfile(){
     var types = {}, used = {}, top = 0;
     SET.forEach(function(t){
-      ((t.banks && t.banks['TYPE OF SET']) || []).forEach(function(n){
+      ((t.banks && t.banks[TYPE_BANK]) || []).forEach(function(n){
         types[n] = (types[n] || 0) + 1; if (types[n] > top) top = types[n];
       });
       tagList(t).forEach(function(tg){ used[tg] = 1; });
@@ -8252,8 +8286,9 @@
     // biggest colour queue so someone else's labels work just as well.
     if (!TG.queueLabel) {
       var colours = queues.filter(function(q){ return q.key.indexOf('color:') === 0; });
+      var first = ((typeof IN !== 'undefined' && IN.importColor) || 'NEW').toUpperCase();
       var pick = colours.filter(function(q){
-        return q.label.trim().toUpperCase() === 'ADD'; })[0] || colours[0];
+        return q.label.trim().toUpperCase() === first; })[0] || colours[0];
       if (pick) tgStartQueue(pick.key, {open: false});
     }
     queues.forEach(function(q){
@@ -8316,7 +8351,9 @@
 
   // The pile, fresh from the server. Keeps the open track open.
   function inLoad(){
-    if (!IN.queue) IN.queue = 'ADD';
+    // The settings' import colour arrives with the first answer and takes
+    // over from this guess (see importColor below).
+    if (!IN.queue) IN.queue = IN.importColor || 'NEW';
     var seq = ++IN.seq;
     return fetch('/api/browse?limit=5000&color=' + encodeURIComponent(IN.queue))
       .then(function(r){ return r.json(); }).then(function(j){
@@ -8330,6 +8367,7 @@
         IN.shown = (typeof j.shown === 'number') ? j.shown : (j.rows || []).length;
         if (j.colorIds) LABEL_SLOTS = j.colorIds;
         if (j.readyColor) IN.ready = j.readyColor;
+        if (j.importColor) IN.importColor = j.importColor;
         if (!IN.queueSet && j.importColor && j.importColor !== IN.queue
             && (j.colorCounts || {})[j.importColor] != null) {
           // The pile new music lands in, whatever it is called here.
@@ -8345,9 +8383,15 @@
           if (still && !IN.inflight && !inTyping()) { IN.track = still; inRenderPanel(); }
         }
         inRenderHead(); inRenderList(); navCounts();
+        // ⚠ A library with no MyTag groups, or without the colour new music
+        // lands in, is not "done" — it has not been set up. Say so, and offer
+        // the starter vocabulary instead of a cheerful empty screen.
+        var unset = !IN.banks.length || LABEL_SLOTS[IN.queue] == null;
         if (!IN.track) inEmpty(IN.rows.length
           ? 'Pick a track on the left — or press ▶ on the deck.'
-          : 'Nothing waiting in ' + IN.queue + '. Nice.');
+          : (unset ? (IN.banks.length ? 'No colour called ' + IN.queue + ' in this library yet.'
+                                      : 'This library has no MyTags yet.')
+                   : 'Nothing waiting in ' + IN.queue + '. Nice.'), unset);
       }).catch(function(){});
   }
 
@@ -8356,11 +8400,83 @@
     return !!(a && (a.id === 'inGenre' || a.id === 'inNote'));
   }
 
-  function inEmpty(text){
+  function inEmpty(text, offerVocab){
     $('inBody').classList.add('hidden');
-    $('inEmpty').classList.remove('hidden');
-    $('inEmpty').textContent = text;
+    var box = $('inEmpty');
+    box.classList.remove('hidden');
+    box.textContent = text;
+    if (offerVocab) {
+      var p = document.createElement('div');
+      p.className = 'vcOffer';
+      p.textContent = 'Start from a ready-made vocabulary — kinds of night, moods, '
+        + 'where in the set — and a colour for each step of tagging.';
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = 'Set up a starter vocabulary';
+      b.addEventListener('click', vcOpen);
+      box.appendChild(p); box.appendChild(b);
+    }
   }
+
+  // ── the starter vocabulary ─────────────────────────────────────────────
+  function vcOpen(){
+    $('vcOverlay').classList.remove('hidden');
+    $('vcMsg').textContent = '';
+    $('vcApply').disabled = true;
+    var body = $('vcBody'); body.textContent = 'Reading your library…';
+    fetch('/api/vocabulary').then(function(r){ return r.json(); }).then(function(j){
+      body.textContent = '';
+      if (j.error) { body.textContent = j.error; return; }
+      j.groups.forEach(function(g){
+        var box = document.createElement('div'); box.className = 'vcGroup';
+        var h = document.createElement('h3');
+        h.textContent = bankTitle(g.name) + (g.exists ? '  · already in your library' : '');
+        var a = document.createElement('div'); a.className = 'about'; a.textContent = g.about;
+        var tags = document.createElement('div'); tags.className = 'vcTags';
+        g.tags.forEach(function(t){
+          var c = document.createElement('span');
+          c.className = 'vcTag' + (t.exists ? ' have' : '');
+          c.textContent = t.name; c.title = t.about + (t.exists ? ' (you have it)' : '');
+          tags.appendChild(c);
+        });
+        box.appendChild(h); box.appendChild(a); box.appendChild(tags);
+        body.appendChild(box);
+      });
+      var col = document.createElement('div'); col.className = 'vcGroup';
+      var ch = document.createElement('h3'); ch.textContent = 'Colours';
+      var ca = document.createElement('div'); ca.className = 'about';
+      ca.textContent = 'New music comes in as NEW, becomes GRID once tagged here (its beatgrid '
+        + 'is still to check in rekordbox) and READY when it is. Only colours that still have '
+        + "rekordbox's factory names are renamed.";
+      var ct = document.createElement('div'); ct.className = 'vcTags';
+      j.colours.forEach(function(c){
+        var e = document.createElement('span');
+        e.className = 'vcTag' + (c.rename ? '' : ' have');
+        e.textContent = c.rename ? (c.current || 'colour ' + c.slot) + ' → ' + c.name
+                                 : c.name + (c.current === c.name ? '' : ' (kept: ' + c.current + ')');
+        e.title = c.about;
+        ct.appendChild(e);
+      });
+      col.appendChild(ch); col.appendChild(ca); col.appendChild(ct);
+      body.appendChild(col);
+      $('vcApply').disabled = !j.adds;
+      $('vcMsg').textContent = j.adds ? '' : 'Your library already has all of it.';
+    }).catch(function(){ body.textContent = 'Could not read the library.'; });
+  }
+  function vcClose(){ $('vcOverlay').classList.add('hidden'); }
+  $('vcClose').addEventListener('click', vcClose);
+  $('vcOverlay').addEventListener('click', function(e){ if (e.target === this) vcClose(); });
+  $('vcApply').addEventListener('click', function(){
+    var btn = this; btn.disabled = true;
+    $('vcMsg').textContent = 'Adding…';
+    fetch('/api/vocabulary/apply', {method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({colours: $('vcColours').checked})})
+      .then(function(r){ return r.json(); }).then(function(j){
+        if (j.error) { $('vcMsg').textContent = j.error; btn.disabled = false; return; }
+        $('vcMsg').textContent = 'Added ' + j.tags.length + ' tags'
+          + (j.colours.length ? ' and named ' + j.colours.join(', ') : '') + '. Open rekordbox to see them.';
+        IN.queue = ''; IN.queueSet = false; inLoad();
+      }).catch(function(){ $('vcMsg').textContent = 'Could not reach the app.'; btn.disabled = false; });
+  });
 
   function inRenderHead(){
     $('inCount').textContent = IN.shown.toLocaleString('en');
@@ -8395,7 +8511,7 @@
       s.appendChild(document.createTextNode(' ' + text));
       leg.appendChild(s);
     }
-    item(IN.ready || 'OK', IN.ready || 'OK');
+    if (IN.ready) item(IN.ready, IN.ready);
     if (IN.done && IN.done !== IN.queue) item(IN.done, 'need their beatgrid');
     $('inListLab').textContent = 'Next up';
     $('inSort').textContent = IN.sort < 0 ? 'Newest first' : 'Oldest first';
@@ -8734,7 +8850,7 @@
                          : '';
     }
     var routes = $('inRoutes'); routes.textContent = '';
-    var skip = [IN.queue, done, IN.ready || 'OK'];
+    var skip = [IN.queue, done, IN.ready];
     Object.keys(LABEL_SLOTS).sort(function(a, b){ return LABEL_SLOTS[a] - LABEL_SLOTS[b]; })
       .forEach(function(name){
         if (skip.indexOf(name) >= 0) return;
@@ -8998,7 +9114,7 @@
 
   // ── the rail: counts, and what rekordbox is doing ─────────────────────
   function navCounts(){
-    var q = IN.queue || 'ADD';
+    var q = IN.queue || IN.importColor || 'NEW';
     var n = (IN.counts && IN.counts[q] != null) ? IN.counts[q]
           : (typeof BR !== 'undefined' && BR.colorCounts && BR.colorCounts[q]);
     $('navInboxN').textContent = n ? Number(n).toLocaleString('en') : '';
