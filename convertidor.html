@@ -192,8 +192,8 @@
   .rbState.closed i{background:#55c574}
   .rbState.open i{background:#f5aa55}
   .rbState small{display:block;color:var(--faint);font-size:12px}
-  .phoneOverlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.28);display:grid;place-items:center}
-  .phonePanel{width:min(620px,92vw);max-height:84vh;display:flex;flex-direction:column;background:var(--card);
+  .sheet{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.28);display:grid;place-items:center}
+  .sheetPanel{width:min(620px,92vw);max-height:84vh;display:flex;flex-direction:column;background:var(--card);
               border-radius:14px;box-shadow:var(--sh2);border:1px solid var(--line)}
   .ppHead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 6px}
   .ppHead h2{margin:0}
@@ -2385,8 +2385,8 @@
 
   <!-- ══════════════ SETS ══════════════ -->
   <!-- A starter vocabulary for a library with no MyTags (vocabulary.py). -->
-  <div class="phoneOverlay hidden" id="vcOverlay">
-    <div class="phonePanel vcPanel" role="dialog" aria-label="Starter vocabulary">
+  <div class="sheet hidden" id="vcOverlay">
+    <div class="sheetPanel vcPanel" role="dialog" aria-label="Starter vocabulary">
       <div class="ppHead">
         <h2>A vocabulary to start from</h2>
         <button class="ppClose" id="vcClose" type="button" aria-label="Close">✕</button>
@@ -2406,8 +2406,8 @@
 
   <!-- Tag the track that is playing, or add it to a playlist — from any
        screen, without going to Browse. Writes through the tagger's queue. -->
-  <div class="phoneOverlay hidden" id="qtOverlay">
-    <div class="phonePanel qtPanel" role="dialog" aria-label="Tag or file this track">
+  <div class="sheet hidden" id="qtOverlay">
+    <div class="sheetPanel qtPanel" role="dialog" aria-label="Tag or file this track">
       <div class="ppHead">
         <div class="qtHeadText">
           <h2 id="qtTitle" translate="no">…</h2>

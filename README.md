@@ -104,16 +104,6 @@ connected), and opens the right page of System Settings. Keep `Backspins.app`
 in Applications: run straight from Downloads, macOS gives it a temporary copy
 and forgets what you allowed.
 
-## Backspins Cloud (coming)
-
-The app is free and open source, and will stay that way. Backspins Cloud will
-be an optional paid service with two parts:
-
-- **A hosted backup of your music**: the audio files themselves, not just
-  the library.
-- **Your library on your phone**: tag, organise and listen from anywhere,
-  with your computer switched off. Every change waits in the cloud and goes
-  into rekordbox the next time Backspins runs on your computer.
 
 ## Run from source
 

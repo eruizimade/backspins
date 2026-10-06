@@ -154,7 +154,7 @@ def create_set_playlist(name, content_ids, db_path=None, playlist_id=None, backu
     # ⚠ Overwriting with an empty list would wipe the playlist.
     if not content_ids:
         raise RuntimeError('There are no tracks to save.')
-    # `backup_max_age`: reuse a recent backup (the phone's sets arrive in
+    # `backup_max_age`: reuse a recent backup (sets saved in a burst arrive in
     # bursts, and a full copy of the library each would fill the disk).
     backup = backup_db(db_path, max_age=backup_max_age)
 

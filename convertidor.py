@@ -1015,7 +1015,7 @@ def order_banks(banks):
 
 
 def browse_row(t):
-    """One track as every tagging screen sees it — and as the phone does.
+    """One track as every tagging screen sees it.
 
     ⚠ Scalars get the queue overlay too, not just tags. With rekordbox open the
     queue holds the edit, and showing the raw library value made your own
@@ -1024,7 +1024,7 @@ def browse_row(t):
     be checked against what the database holds, never against what the queue
     is about to make it.
 
-    Shared by /api/browse and the phone sync on purpose: the phone works from a
+    Shared by /api/browse and every other copy on purpose: they work from a
     copy of these rows, and two versions of "a row" would drift apart the
     first time a field was added to one of them.
     """
@@ -1265,7 +1265,7 @@ def patch_library_caches(ops):
         if any(o.get('op') == 'set_color' for o in (ops or [])):
             RB_LIBRARY.clear()
         # The playlists travel inside both caches: a track added to one from
-        # the phone must show up in them, so they are read again.
+        # anywhere must show up in them, so they are read again.
         if any(str(o.get('op') or '').startswith('playlist_') for o in (ops or [])):
             RB_LIBRARY.clear()
             RB_ALL.clear()
@@ -3408,7 +3408,7 @@ def _restart_self():
 def affinity_model(tracks=None):
     """The learned transition model (affinity.py), rebuilt when the library changes.
 
-    Shared by the Sets tab and the phone: one model, never two copies of it.
+    Shared by everything that suggests a next track: one model, never two copies of it.
     """
     import affinity as af
     with LOCK:
@@ -3434,17 +3434,6 @@ def _playlist_tree():
         return []
 
 
-def save_set_playlist(name, ids, playlist_id=None):
-    """What POST /api/playlist does, for a set made on the phone."""
-    import rekordbox_merge as rm
-    # ⚠ A backup at most every ten minutes from here: sets from the phone come
-    # in bursts, and a full copy of master.db per set could fill the disk.
-    res = rm.create_set_playlist(name, ids, playlist_id=playlist_id, backup_max_age=600)
-    with LOCK:
-        RB_LIBRARY.clear()
-        RB_ALL.clear()
-        bump_library_gen()
-    return res
 
 
 

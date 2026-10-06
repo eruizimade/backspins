@@ -247,18 +247,6 @@
   .col span{font-size:11.5px;padding:3px 8px;border-radius:99px;background:var(--field)}
   .on .col span{animation:drop .4s both}
 
-  /* ── cloud teaser ── */
-  .cloud{padding:90px 0}
-  .cloudbox{position:relative;overflow:hidden;border-radius:28px;padding:48px;border:1px solid var(--line);
-            background:radial-gradient(100% 120% at 0% 0%,color-mix(in srgb,var(--bs) 22%,var(--bg2)),var(--bg2) 60%)}
-  .cloudbox h2{font-size:clamp(28px,3.6vw,40px);letter-spacing:-.03em;margin:10px 0 12px}
-  .cloudbox p{color:var(--dim);max-width:40em;margin:0 0 10px}
-  .soon{display:inline-block;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--bsg);color:#fff}
-  .phone{position:absolute;right:48px;top:50%;width:150px;height:300px;margin-top:-150px;border-radius:30px;border:6px solid var(--line2);
-         background:var(--card);box-shadow:var(--sh);display:flex;flex-direction:column;gap:8px;padding:28px 12px 12px;animation:bob 6s ease-in-out infinite}
-  .phone b{height:10px;border-radius:5px;background:var(--field)} .phone b.h{background:var(--bsg);width:60%}
-  @media (max-width:900px){ .phone{display:none} .cloudbox{padding:30px} }
-
   /* ── install ── */
   .install{padding:80px 0;border-top:1px solid var(--line)}
   .install h2,.faq h2{font-size:clamp(28px,3.4vw,38px);letter-spacing:-.03em;margin:0 0 26px}
@@ -454,18 +442,6 @@
 
 </main>
 
-<section class="cloud">
-  <div class="wrap">
-    <div class="cloudbox reveal">
-      <span class="soon"><span data-l="en">Coming soon</span><span data-l="es">Próximamente</span></span>
-      <h2>Backspins Cloud</h2>
-      <p><span data-l="en">An optional paid service for when you are away from the desk: a <b>hosted backup of your music</b>, and your library <b>on your phone</b> — tag, organise and listen with your computer switched off. Every change goes into rekordbox the next time Backspins runs.</span>
-         <span data-l="es">Un servicio opcional de pago para cuando estás lejos del ordenador: un <b>backup de tu música en la nube</b>, y tu biblioteca <b>en el móvil</b> — etiqueta, organiza y escucha con el ordenador apagado. Cada cambio entra en rekordbox la próxima vez que abras Backspins.</span></p>
-      <p><span data-l="en">The app stays free.</span><span data-l="es">La app sigue siendo gratis.</span></p>
-      <div class="phone"><b class="h"></b><b></b><b></b><b style="width:70%"></b><b></b><b style="width:50%"></b></div>
-    </div>
-  </div>
-</section>
 
 <section class="install" id="install">
   <div class="wrap">
@@ -505,8 +481,8 @@
       <p><span data-l="en">No. Everything runs on your computer. The app only answers its own window — other websites cannot reach it.</span>
          <span data-l="es">No. Todo funciona en tu ordenador. La app solo responde a su propia ventana — otras webs no pueden llegar a ella.</span></p></details>
     <details class="reveal"><summary><span data-l="en">Is it really free?</span><span data-l="es">¿De verdad es gratis?</span></summary>
-      <p><span data-l="en">Yes, and open source (GPL-3.0). Backspins Cloud — the phone and the hosted backup — will be the optional paid part.</span>
-         <span data-l="es">Sí, y de código abierto (GPL-3.0). Backspins Cloud — el móvil y el backup en la nube — será la parte opcional de pago.</span></p></details>
+      <p><span data-l="en">Yes, and open source (GPL-3.0).</span>
+         <span data-l="es">Sí, y de código abierto (GPL-3.0).</span></p></details>
     <details class="reveal"><summary><span data-l="en">Which rekordbox versions?</span><span data-l="es">¿Qué versiones de rekordbox?</span></summary>
       <p><span data-l="en">rekordbox 6 and 7, on Windows and macOS. Your library can live on an external drive.</span>
          <span data-l="es">rekordbox 6 y 7, en Windows y macOS. Tu biblioteca puede estar en un disco externo.</span></p></details>
