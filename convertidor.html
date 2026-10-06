@@ -1658,6 +1658,14 @@
   .stRow .sw{flex:none;width:10px;height:10px;border-radius:3px}
   .stRow .b{flex:1;min-width:0;font-size:13px;color:var(--text)}
   .stRow .b small{display:block;color:var(--dim);font-size:12px;line-height:1.45}
+  .fdRow{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+  .fdRow .b{flex:1;min-width:0;font-size:13px;color:var(--text)}
+  .fdRow .b small{display:block;color:var(--dim);font-size:12px;line-height:1.45;overflow-wrap:anywhere}
+  .fdRow .sz{flex:none;font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;min-width:64px;text-align:right;padding-top:2px}
+  .fdRow .acts{flex:none;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .fdRow details{margin-top:4px;font-size:12px;color:var(--dim)}
+  .fdRow details ul{margin:4px 0 0;padding-left:18px;max-height:180px;overflow:auto}
+  @media (max-width:600px){.fdRow{flex-wrap:wrap}.fdRow .acts{width:100%;justify-content:flex-start}}
   .stRow .sz{flex:none;font-variant-numeric:tabular-nums;font-size:13px;font-weight:600;min-width:64px;text-align:right}
   .stBudget{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);
             font-size:13px}
@@ -1697,6 +1705,39 @@
   button:not([class]){font-weight:600}
   button:not([class]):not(:disabled):hover{opacity:1;filter:brightness(1.06)}
   button.ghost{border-radius:10px}
+
+  /* ── Settings ── */
+  #viewSettings{max-width:860px}
+  .stHead{display:flex;align-items:center;gap:14px;margin:4px 0 16px}
+  .stHead h1{margin:0}
+  .stSaved{font-size:13px;font-weight:600;color:var(--ok-ink);opacity:0;transition:opacity .25s}
+  .stSaved.on{opacity:1} .stSaved.bad{color:var(--err-ink)}
+  .stCard h2{margin:0 0 6px}
+  .stNote{font-size:13px;color:var(--dim);margin:0 0 6px}
+  .stRowS{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 0;
+          border-top:1px solid var(--line)}
+  .stCard h2 + .stRowS, .stCard .stNote + .stRowS{border-top:0}
+  .stL{font-size:14px;font-weight:550;min-width:0}
+  .stL small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:2px}
+  .stL small.bad{color:var(--err-ink)}
+  .stRowS > select{width:auto;min-width:200px;max-width:280px}
+  .stCtl{display:flex;gap:8px;align-items:center;flex:0 1 420px;min-width:220px}
+  .stCtl input{flex:1;min-width:0}
+  .stChecks{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:flex-end;max-width:420px}
+  .stCheck{display:flex;align-items:center;gap:6px;margin:0;font-size:13px;font-weight:500;color:var(--text)}
+  .stFix{display:flex;align-items:center;gap:8px;margin:8px 0}
+  .stFix input{flex:1;min-width:0} .stFix span{color:var(--faint)}
+  #setFixAdd{margin-top:8px}
+  .stAdv summary{cursor:pointer;font-size:13px;color:var(--dim);padding:8px 0 2px}
+  .stSwitch{position:relative;display:inline-block;width:44px;height:26px;margin:0;flex:none}
+  .stSwitch input{opacity:0;width:0;height:0;position:absolute}
+  .stSwitch i{position:absolute;inset:0;border-radius:99px;background:var(--line2);transition:background .2s;cursor:pointer}
+  .stSwitch i::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;
+                     background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s}
+  .stSwitch input:checked + i{background:var(--bsg)}
+  .stSwitch input:checked + i::after{transform:translateX(18px)}
+  .stSwitch input:focus-visible + i{outline:2px solid var(--accent);outline-offset:2px}
+  @media (max-width:900px){ .stRowS{flex-direction:column;align-items:stretch} .stRowS > select,.stCtl{max-width:none} .stChecks{justify-content:flex-start} }
 
   /* ══ the tour: how Backspins works, animated ═════════════════════════════
      Shown once on first launch and from "How it works" in the rail. Every
@@ -1947,6 +1988,7 @@
     <button id="tabTeach" class="navi tool" type="button"><span class="nl">Teach</span></button>
     <button id="tabBackups" class="navi tool" type="button"><span class="nl">Your data</span><span
             class="n" id="navBackupsN"></span></button>
+    <button id="tabSettings" class="navi tool" type="button"><span class="nl">Settings</span></button>
   </div>
   <div class="railFoot">
     <button class="railUpdate hidden" id="railUpdate" type="button"></button>
@@ -1957,10 +1999,6 @@
       <button type="button" data-theme="auto" title="Follow the Mac">Auto</button>
       <button type="button" data-theme="light" title="Light">Light</button>
       <button type="button" data-theme="dark" title="Dark">Dark</button>
-    </div>
-    <div class="themepick langpick" id="langPick" title="Language · Idioma" translate="no">
-      <button type="button" data-lang="en" title="English">EN</button>
-      <button type="button" data-lang="es" title="Español">ES</button>
     </div>
   </div>
 </nav>
@@ -2600,6 +2638,13 @@
         <button class="ghost" id="stOpenApp" type="button">Show app folder</button></div>
       <div id="stBody" class="small">Measuring…</div>
     </section>
+    <!-- Folders of music already in the library that rekordbox never plays
+         (folder_dupes.py). Everything goes to the Bin, after a second look. -->
+    <section class="card dataCard" id="fdCard">
+      <div class="dataHead"><h2>Duplicate folders</h2>
+        <button class="ghost" id="fdAgain" type="button">Look for them</button></div>
+      <div id="fdBody" class="small"><span>Folders of music that rekordbox never plays and that is already in your library: the originals a conversion set aside, an old backup, a downloader's "processed" folder.</span></div>
+    </section>
     <section class="card" style="margin-bottom:12px">
       <div class="bkTop">
         <div class="grow">
@@ -2617,6 +2662,103 @@
       <div class="tablewrap" style="max-height:none;margin-top:0;border:0">
         <table><tbody id="bkList"></tbody></table>
       </div>
+    </section>
+  </div>
+
+  <!-- ══════════════ SETTINGS ══════════════
+       Every setting in settings.py that a person would change, on one screen.
+       Each control saves the moment it changes (POST /api/settings); nothing
+       here needs a Save button or a restart. -->
+  <div id="viewSettings" class="hidden">
+    <div class="stHead"><h1>Settings</h1><span class="stSaved" id="stSaved"></span></div>
+
+    <section class="card stCard">
+      <h2>Appearance</h2>
+      <div class="stRowS"><div class="stL">Theme<small>Auto follows your computer.</small></div>
+        <div class="segmented" id="setTheme">
+          <button type="button" data-v="auto">Auto</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button>
+        </div></div>
+      <div class="stRowS"><div class="stL">Language<small>The screens, not your tags or titles.</small></div>
+        <div class="segmented" id="setLang" translate="no">
+          <button type="button" data-v="en">English</button><button type="button" data-v="es">Español</button>
+        </div></div>
+    </section>
+
+    <section class="card stCard">
+      <h2>rekordbox library</h2>
+      <div class="stRowS"><div class="stL">Database<small id="setLibState">…</small></div>
+        <div class="stCtl"><input type="text" id="setLibrary" spellcheck="false" placeholder="found automatically">
+          <button class="ghost" id="setLibAuto" type="button">Find it for me</button></div></div>
+      <details class="stAdv"><summary>Advanced</summary>
+        <div class="stRowS"><div class="stL">Encryption key<small>Only if a future rekordbox changes it. Leave empty otherwise.</small></div>
+          <div class="stCtl"><input type="password" id="setKey" spellcheck="false" autocomplete="off" placeholder="the built-in one"></div></div>
+      </details>
+    </section>
+
+    <section class="card stCard">
+      <h2>Tagging workflow</h2>
+      <p class="stNote">rekordbox colour labels for each step. Choose the ones you use.</p>
+      <div class="stRowS"><div class="stL">New music arrives as<small>Imported tracks get it, and the Inbox opens on it.</small></div>
+        <select class="sel" id="setImport" data-key="import_color"></select></div>
+      <div class="stRowS"><div class="stL">Tagged, beatgrid to check<small>What "Mark … · next" stamps. Empty: the ready colour.</small></div>
+        <select class="sel" id="setDone" data-key="done_color"></select></div>
+      <div class="stRowS"><div class="stL">Ready to play<small>Sets only offers these. Empty: every track counts.</small></div>
+        <select class="sel" id="setReady" data-key="ready_color"></select></div>
+      <div class="stRowS"><div class="stL">Energy in the comment<small>Reads "6 - dark roller" as energy 6 and the note "dark roller".</small></div>
+        <label class="stSwitch"><input type="checkbox" id="setEnergy" data-key="energy_in_comment"><i></i></label></div>
+    </section>
+
+    <section class="card stCard">
+      <h2>MyTag groups</h2>
+      <p class="stNote">Backspins works out which group is which from what is in it. Choose one only if it guessed wrong.</p>
+      <div class="stRowS"><div class="stL">Kind of night<small>What Sets offers to start from.</small></div>
+        <select class="sel" id="setTypeBank" data-key="type_bank"></select></div>
+      <div class="stRowS"><div class="stL">Mood<small>The directions Sets moves in.</small></div>
+        <select class="sel" id="setMoodBank" data-key="mood_bank"></select></div>
+      <div class="stRowS"><div class="stL">Running order<small>Opener, warm-up, peak… in the order a night goes.</small></div>
+        <select class="sel" id="setTimingBank" data-key="timing_bank"></select></div>
+      <div class="stRowS"><div class="stL">Not a set context<small>Housekeeping groups that Sets should ignore.</small></div>
+        <div class="stChecks" id="setIgnored" translate="no"></div></div>
+      <div class="stRowS"><div class="stL">No MyTags yet?<small>Add a ready-made vocabulary: 25 tags in four groups.</small></div>
+        <button class="ghost" id="setVocab" type="button">Starter vocabulary</button></div>
+    </section>
+
+    <section class="card stCard">
+      <h2>Genre spellings</h2>
+      <p class="stNote">Your own corrections, applied when tracks come in: "Reggeaton" → "Reggaeton".</p>
+      <div id="setFixes"></div>
+      <button class="ghost" id="setFixAdd" type="button">Add a correction</button>
+    </section>
+
+    <section class="card stCard">
+      <h2>Import</h2>
+      <div class="stRowS"><div class="stL">New music folder<small>Where Import starts.</small></div>
+        <div class="stCtl"><input type="text" id="setSource" data-key="source_folder" spellcheck="false" placeholder="choose a folder">
+          <button class="ghost" data-pick="setSource" type="button">Choose…</button></div></div>
+      <div class="stRowS"><div class="stL">Output folder<small>Where converted and renamed files go.</small></div>
+        <div class="stCtl"><input type="text" id="setOutput" data-key="output_folder" spellcheck="false" placeholder="the default">
+          <button class="ghost" data-pick="setOutput" type="button">Choose…</button></div></div>
+      <div class="stRowS"><div class="stL">Move originals aside<small>Into "processed/" in the source folder once dealt with.</small></div>
+        <label class="stSwitch"><input type="checkbox" id="setMove" data-key="move_processed"><i></i></label></div>
+    </section>
+
+    <section class="card stCard">
+      <h2>Backups</h2>
+      <div class="stRowS"><div class="stL">Library backups may use<small>Oldest go first; the two newest always stay.</small></div>
+        <select class="sel" id="setBudget">
+          <option value="0">No limit</option><option value="1024">1 GB</option><option value="2048">2 GB</option>
+          <option value="5120">5 GB</option><option value="10240">10 GB</option>
+        </select></div>
+      <div class="stRowS"><div class="stL">Everything Backspins keeps<small>Sizes, folders, and what can be cleared.</small></div>
+        <button class="ghost" id="setOpenData" type="button">Your data</button></div>
+    </section>
+
+    <section class="card stCard">
+      <h2>Help</h2>
+      <div class="stRowS"><div class="stL">How it works<small>The short animated tour.</small></div>
+        <button class="ghost" id="setTour" type="button">Show the tour</button></div>
+      <div class="stRowS"><div class="stL">Settings file<small id="setFile"></small></div>
+        <button class="ghost" id="setReveal" type="button">Show in folder</button></div>
     </section>
   </div>
 
@@ -2887,6 +3029,7 @@
     [['inbox','tabInbox','viewInbox'],
      ['conv','tabConv','viewConv'], ['sets','tabSets','viewSets'],
      ['teach','tabTeach','viewTeach'], ['backups','tabBackups','viewBackups'],
+     ['settings','tabSettings','viewSettings'],
      ['browse','tabBrowse','viewBrowse'], ['find','tabFind','viewFind'],
      ['sanity','tabSanity','viewSanity']].forEach(function(t){
       $(t[1]).classList.toggle('on', which === t[0]);
@@ -11388,7 +11531,92 @@
     if (bad) $('navBackupsN').textContent = '!';
   }
 
-  $('tabBackups').addEventListener('click', function(){ setTab('backups'); bkLoad(); acLoad(); stLoad(); });
+  // ── duplicate folders: music already in the library, never played ────
+  var FD = {timer: null, res: null};
+  function fdBase(p){ return String(p).split('/').filter(Boolean).pop() || p; }
+  function fdHome(p){ return String(p).replace(/^\/Users\/[^\/]+/, '~'); }
+  function fdList(files){
+    return '<ul translate="no">' + files.map(function(f){ return '<li>' + bkEsc(f.name) + '</li>'; }).join('') + '</ul>';
+  }
+  function fdRender(j){
+    var r = j.result, h = '';
+    if (j.busy) {
+      $('fdBody').innerHTML = '<span>Looking through your music folders…</span>'
+        + (j.total ? ' <span>' + j.done.toLocaleString('en') + ' / ' + j.total.toLocaleString('en') + '</span>' : '');
+      return;
+    }
+    if (j.error) { $('fdBody').textContent = j.error; return; }
+    if (!r) return;
+    FD.res = r;
+    var all = r.folders.concat(r.loose), bytes = 0;
+    all.forEach(function(f){ bytes += f.dupeBytes; });
+    h += '<div class="stSum">' + (all.length
+        ? '<span><b>' + bkSize(bytes) + '</b> of music you already have, in places rekordbox never plays</span>'
+        : '<span>No duplicate folders: every copy of your music is the one rekordbox plays.</span>')
+      + '<span>' + r.scanned.toLocaleString('en') + ' music files looked at</span></div>';
+    r.folders.forEach(function(f){
+      var ex = f.example, kept = f.unique ? '<span>' + f.unique + ' not in your library — they stay.</span>' : '';
+      if (!f.whole && !f.unique && f.other) kept = '<span>It holds other files too: only the duplicates go.</span>';
+      h += '<div class="fdRow"><div class="b"><span translate="no">' + bkEsc(fdBase(f.path)) + '</span>'
+        + '<small>' + f.dupes.toLocaleString('en') + ' of ' + f.audio.toLocaleString('en')
+        + ' tracks already in your library. ' + kept + '</small>'
+        + '<small translate="no">' + bkEsc(fdHome(f.path)) + '</small>'
+        + (ex ? '<small><span>For example:</span> <span translate="no">' + bkEsc(ex.name) + ' → ' + bkEsc(fdHome(ex.orig)) + '</span></small>' : '')
+        + (f.uniqueFiles.length ? '<details><summary>Not in your library</summary>' + fdList(f.uniqueFiles) + '</details>' : '')
+        + '</div><span class="sz">' + bkSize(f.dupeBytes) + '</span><div class="acts">'
+        + '<button class="ghost btn-sm" data-fdshow="' + bkEsc(f.path) + '" type="button">Show</button>'
+        + '<button class="btn-sm" data-fdbin="' + bkEsc(f.path) + '" type="button">'
+        + (f.whole ? 'Move folder to Bin' : 'Move duplicates to Bin') + '</button></div></div>';
+    });
+    r.loose.forEach(function(f){
+      h += '<div class="fdRow"><div class="b"><span>Loose copies in</span> <span translate="no">' + bkEsc(fdBase(f.path)) + '</span>'
+        + '<small>' + f.dupes.toLocaleString('en') + ' tracks already in your library, straight in this folder.</small>'
+        + '<details><summary>Which ones</summary>' + fdList(f.files) + '</details>'
+        + '</div><span class="sz">' + bkSize(f.dupeBytes) + '</span><div class="acts">'
+        + '<button class="btn-sm" data-fdbin="' + bkEsc(f.path) + '" type="button">Move duplicates to Bin</button></div></div>';
+    });
+    h += '<p class="acNote"><span>Only rekordbox is checked: if Serato, Engine DJ, Traktor or a music project uses these files, keep them.</span> '
+      + '<span>Everything goes to the Bin, and each folder is looked at again just before.</span><br>'
+      + '<span>Looked in:</span> <span translate="no">' + r.places.map(fdHome).map(bkEsc).join(', ') + '</span></p>';
+    $('fdBody').innerHTML = h;
+  }
+  function fdLoad(){
+    clearTimeout(FD.timer);
+    return fetch('/api/folders').then(function(r){ return r.json(); }).then(function(j){
+      $('fdAgain').disabled = j.busy;
+      $('fdAgain').textContent = j.result ? 'Look again' : 'Look for them';
+      fdRender(j);
+      if (j.busy) FD.timer = setTimeout(fdLoad, 700);
+      return j;
+    }).catch(function(){});
+  }
+  function fdScan(){ post('/api/folders/scan', {}).then(function(){ setTimeout(fdLoad, 200); }); }
+  $('fdAgain').addEventListener('click', fdScan);
+  $('fdBody').addEventListener('click', function(e){
+    var s = e.target.closest('[data-fdshow]');
+    if (s) { post('/api/folders/reveal', {path: s.dataset.fdshow}); return; }
+    var b = e.target.closest('[data-fdbin]');
+    if (!b || !FD.res) return;
+    var p = b.dataset.fdbin;
+    var f = FD.res.folders.filter(function(x){ return x.path === p; })[0];
+    var l = FD.res.loose.filter(function(x){ return x.path === p; })[0];
+    var msg = f && f.whole
+      ? 'Move the folder “' + fdBase(p) + '” (' + bkSize(f.bytes) + ') to the Bin? All the music in it is already in your library.'
+      : 'Move the ' + (f || l).dupes + ' duplicates in “' + fdBase(p) + '” (' + bkSize((f || l).dupeBytes) + ') to the Bin? '
+        + 'Anything that is not already in your library stays where it is.';
+    if (!confirm(_t(msg))) return;
+    b.disabled = true; b.textContent = 'Moving…';
+    post('/api/folders/bin', {path: p, whole: !!(f && f.whole)}).then(function(r){
+      if (r && r.error) alert(_t(r.error));
+      else if (r && r.kept) alert(_t(r.binned + ' moved to the Bin. ' + r.kept + ' had changed since the scan and stayed.'));
+      setTimeout(fdLoad, 200); stLoad();
+    }).catch(function(err){ alert(_t(err.message)); setTimeout(fdLoad, 200); });
+  });
+
+  $('tabBackups').addEventListener('click', function(){
+    setTab('backups'); bkLoad(); acLoad(); stLoad();
+    fdLoad().then(function(j){ if (j && !j.busy && !j.result && !j.error) fdScan(); });
+  });
   setTimeout(function(){ acLoad(); stLoad(); }, 4000);
   $('bkNow').addEventListener('click', function(){
     $('bkNow').disabled = true; $('bkNow').textContent = 'Backing up…';
@@ -12063,10 +12291,185 @@
   // back the same page for all of them, so the path is the only thing that
   // says which tab you asked for.
   // An old /sets2 bookmark lands on Sets, the one that is kept.
+
+  // ══════════════ SETTINGS ══════════════
+  // One screen for everything in settings.py worth changing. Each control
+  // saves on change; what changes how the library is read (where it is, its
+  // key, which group is which, what "ready" means) reloads the page on this
+  // screen, because every view caches the library it was given.
+  var SETS = {cfg: null, ctx: null, t: null};
+  var SET_RELOADS = ['library_db', 'library_key', 'mood_bank', 'timing_bank', 'type_bank',
+                     'ignored_banks', 'ready_color', 'done_color', 'energy_in_comment'];
+  function setFlash(text, bad){
+    var el = $('stSaved');
+    el.textContent = text; el.classList.toggle('bad', !!bad); el.classList.add('on');
+    clearTimeout(SETS.t);
+    SETS.t = setTimeout(function(){ el.classList.remove('on'); }, bad ? 6000 : 1800);
+  }
+  function setSave(patch){
+    return post('/api/settings', patch).then(function(j){
+      SETS.cfg = j.settings || SETS.cfg;
+      var reload = Object.keys(patch).some(function(k){ return SET_RELOADS.indexOf(k) >= 0; });
+      if (reload) { setFlash('Saved — reloading…'); setTimeout(function(){ location.href = '/settings'; }, 500); return; }
+      setFlash('Saved ✓');
+      if ('import_color' in patch && typeof IN !== 'undefined') { IN.queue = ''; IN.queueSet = false; }
+    }).catch(function(e){ setFlash(String(e.message || e), true); });
+  }
+  function setSeg(id, value){
+    [].forEach.call($(id).querySelectorAll('button'), function(b){ b.classList.toggle('on', b.dataset.v === value); });
+  }
+  function setOptions(sel, names, value, emptyLabel){
+    sel.textContent = '';
+    var o = document.createElement('option'); o.value = ''; o.textContent = emptyLabel; sel.appendChild(o);
+    var have = false;
+    names.forEach(function(n){
+      var x = document.createElement('option'); x.value = n; x.textContent = n.trim(); x.translate = false; sel.appendChild(x);
+      if (n === value) have = true;
+    });
+    if (value && !have) {       // a value set before that no longer exists: shown, not lost
+      var g = document.createElement('option'); g.value = value; g.textContent = value + ' (not in the library)'; sel.appendChild(g);
+    }
+    sel.value = value || '';
+  }
+  function setFixRows(){
+    var box = $('setFixes'); box.textContent = '';
+    var fixes = (SETS.cfg && SETS.cfg.genre_fixes) || {};
+    var keys = Object.keys(fixes);
+    if (!keys.length) {
+      var p = document.createElement('div'); p.className = 'stNote'; p.textContent = 'No corrections yet.'; box.appendChild(p);
+    }
+    keys.forEach(function(k){ box.appendChild(setFixRow(k, fixes[k])); });
+  }
+  function setFixRow(from, to){
+    var r = document.createElement('div'); r.className = 'stFix';
+    var a = document.createElement('input'); a.type = 'text'; a.value = from || ''; a.placeholder = window.I18N ? I18N.t('as written') : 'as written';
+    a.translate = false;
+    var arr = document.createElement('span'); arr.textContent = '→';
+    var b = document.createElement('input'); b.type = 'text'; b.value = to || ''; b.placeholder = window.I18N ? I18N.t('should be') : 'should be';
+    b.translate = false;
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'ghost btn-sm'; x.textContent = 'Remove';
+    x.addEventListener('click', function(){ r.remove(); setFixSave(); });
+    [a, b].forEach(function(i){ i.spellcheck = false; i.addEventListener('change', setFixSave); });
+    r.appendChild(a); r.appendChild(arr); r.appendChild(b); r.appendChild(x);
+    return r;
+  }
+  function setFixSave(){
+    var fixes = {};
+    [].forEach.call($('setFixes').querySelectorAll('.stFix'), function(r){
+      var i = r.querySelectorAll('input'), k = i[0].value.trim(), v = i[1].value.trim();
+      if (k && v && k !== v) fixes[k] = v;
+    });
+    setSave({genre_fixes: fixes});
+  }
+  function setRender(){
+    var c = SETS.cfg, x = SETS.ctx || {};
+    var theme = 'auto';
+    try { theme = localStorage.getItem('conv_theme') || 'auto'; } catch (e) {}
+    setSeg('setTheme', theme);
+    setSeg('setLang', (window.I18N && I18N.lang) || 'en');
+    var lib = x.library || {};
+    $('setLibrary').value = c.library_db || '';
+    $('setLibrary').placeholder = lib.path && !c.library_db ? lib.path : 'found automatically';
+    $('setLibState').textContent = lib.found ? (c.library_db ? 'Using the one you chose.' : 'Found automatically.')
+                                             : 'Not found. Is the drive it lives on connected?';
+    $('setLibState').classList.toggle('bad', !lib.found);
+    $('setKey').value = c.library_key || '';
+    var cols = x.colours || [];
+    setOptions($('setImport'), cols, c.import_color, '—');
+    setOptions($('setDone'), cols, c.done_color, '— same as ready —');
+    setOptions($('setReady'), cols, c.ready_color, '— any track —');
+    $('setEnergy').checked = c.energy_in_comment !== false;
+    var banks = x.banks || [], auto = x.auto || {};
+    setOptions($('setTypeBank'), banks, c.type_bank, 'Automatic' + (auto.type ? ' (' + auto.type + ')' : ''));
+    setOptions($('setMoodBank'), banks, c.mood_bank, 'Automatic' + (auto.mood ? ' (' + auto.mood + ')' : ''));
+    setOptions($('setTimingBank'), banks, c.timing_bank, 'Automatic' + (auto.timing ? ' (' + auto.timing + ')' : ''));
+    var ig = $('setIgnored'); ig.textContent = '';
+    var ignored = c.ignored_banks || [];
+    if (!banks.length) ig.textContent = '—';
+    banks.forEach(function(n){
+      var l = document.createElement('label'); l.className = 'stCheck';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.value = n;
+      cb.checked = ignored.some(function(i){ return i.toLowerCase() === n.toLowerCase(); });
+      cb.addEventListener('change', function(){
+        setSave({ignored_banks: [].map.call(ig.querySelectorAll('input:checked'), function(i){ return i.value; })});
+      });
+      l.appendChild(cb); l.appendChild(document.createTextNode(' ' + n)); ig.appendChild(l);
+    });
+    setFixRows();
+    $('setSource').value = c.source_folder || '';
+    $('setOutput').value = c.output_folder || '';
+    $('setMove').checked = c.move_processed !== false;
+    if ($('setDeliver')) $('setDeliver').checked = c.auto_deliver !== false;
+    $('setBudget').value = String(c.backup_budget_mb || 0);
+    $('setFile').textContent = (x.appDir || '') + '/settings.json';
+  }
+  function setLoad(){
+    return Promise.all([fetch('/api/settings').then(function(r){ return r.json(); }),
+                        fetch('/api/settings/context').then(function(r){ return r.json(); })])
+      .then(function(a){ SETS.cfg = a[0]; SETS.ctx = a[1]; setRender(); })
+      .catch(function(){ setFlash('Could not read the settings.', true); });
+  }
+  $('tabSettings').addEventListener('click', function(){ setTab('settings'); setLoad(); });
+  $('setTheme').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-v]'); if (!b) return;
+    themeApply(b.dataset.v); setSeg('setTheme', b.dataset.v);
+  });
+  $('setLang').addEventListener('click', function(e){
+    var b = e.target.closest('button[data-v]');
+    if (b && window.I18N && b.dataset.v !== I18N.lang) {
+      try { localStorage.setItem('bs_lang', b.dataset.v); } catch (er) {}
+      location.href = '/settings';
+    }
+  });
+  $('setLibrary').addEventListener('change', function(){ setSave({library_db: this.value.trim()}); });
+  $('setLibAuto').addEventListener('click', function(){ $('setLibrary').value = ''; setSave({library_db: ''}); });
+  $('setKey').addEventListener('change', function(){ setSave({library_key: this.value.trim()}); });
+  ['setImport', 'setDone', 'setReady', 'setTypeBank', 'setMoodBank', 'setTimingBank'].forEach(function(id){
+    $(id).addEventListener('change', function(){ var p = {}; p[this.dataset.key] = this.value; setSave(p); });
+  });
+  ['setEnergy', 'setMove', 'setDeliver'].forEach(function(id){
+    if ($(id)) $(id).addEventListener('change', function(){ var p = {}; p[this.dataset.key] = this.checked; setSave(p); });
+  });
+  ['setSource', 'setOutput'].forEach(function(id){
+    $(id).addEventListener('change', function(){ var p = {}; p[this.dataset.key] = this.value.trim(); setSave(p); });
+  });
+  $('viewSettings').addEventListener('click', function(e){
+    var b = e.target.closest('[data-pick]'); if (!b) return;
+    post('/api/choose-folder', {}).then(function(j){
+      if (j.path) { var i = $(b.dataset.pick); i.value = j.path; i.dispatchEvent(new Event('change')); }
+      else if (j.no_dialog) { $(b.dataset.pick).focus(); setFlash('Type the folder in the box.'); }
+    }).catch(function(){});
+  });
+  $('setFixAdd').addEventListener('click', function(){
+    var box = $('setFixes'); var empty = box.querySelector('.stNote'); if (empty) empty.remove();
+    var r = setFixRow('', ''); box.appendChild(r); r.querySelector('input').focus();
+  });
+  $('setBudget').addEventListener('change', function(){
+    var mb = +this.value, sel = this, prev = String((SETS.cfg && SETS.cfg.backup_budget_mb) || 0);
+    var apply = function(){
+      post('/api/storage/budget', {mb: mb}).then(function(){ SETS.cfg.backup_budget_mb = mb; setFlash('Saved ✓'); })
+        .catch(function(e){ setFlash(String(e.message || e), true); });
+    };
+    if (!mb) { apply(); return; }
+    fetch('/api/storage?budget=' + mb).then(function(r){ return r.json(); }).then(function(j){
+      var p = j.preview || {copies: 0};
+      if (p.copies && !confirm('With this limit, the ' + p.copies + ' oldest copies of the library ('
+          + bkSize(p.bytes) + ') are deleted now. The readable XML/JSON versions all stay. Go ahead?')) {
+        sel.value = prev; return;
+      }
+      apply();
+    });
+  });
+  $('setVocab').addEventListener('click', function(){ if (window.vcOpen) window.vcOpen(); });
+  $('setOpenData').addEventListener('click', function(){ $('tabBackups').click(); });
+  $('setTour').addEventListener('click', function(){ if (window.bsTour) window.bsTour(); });
+  $('setReveal').addEventListener('click', function(){ post('/api/storage/reveal', {where: 'app'}); });
+
   var WANT = {'/sets': 'sets', '/sets2': 'sets', '/find': 'find',
               '/browse': 'browse', '/library': 'browse',
-              '/inbox': 'inbox'}[location.pathname] || 'inbox';
+              '/inbox': 'inbox', '/settings': 'settings'}[location.pathname] || 'inbox';
   setTab(WANT);
+  if (WANT === 'settings') setLoad();
   if (WANT === 'sets') {
     if (!LIB && !$('btnLib').disabled) $('btnLib').click();
   }

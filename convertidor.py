@@ -1296,6 +1296,33 @@ def rekordbox_worker():
             STATE['rb']['error'] = str(e)[:400]
 
 
+# ------------------------------------------- folders of copies (folder_dupes)
+# One scan at a time, in the background; the screen polls. Kept until the next
+# scan, because binning a folder is only allowed for one this scan found.
+FOLDERS = {'busy': False, 'done': 0, 'total': 0, 'result': None, 'error': None}
+
+
+def folders_worker():
+    import folder_dupes as fdu
+    import rekordbox as rb
+
+    def progress(done, total):
+        with LOCK:
+            FOLDERS['done'], FOLDERS['total'] = done, total
+    try:
+        tracks, _ = rb.load_tracks()
+        res = fdu.scan(tracks, skip=(prefs.APP_DIR, prefs.BACKUP_DIR, PREVIEW_DIR),
+                       progress=progress)
+        with LOCK:
+            FOLDERS['result'], FOLDERS['error'] = res, None
+    except Exception as e:
+        with LOCK:
+            FOLDERS['error'] = str(e)[:300]
+    finally:
+        with LOCK:
+            FOLDERS['busy'] = False
+
+
 # ----------------------------------------------------- FLAC → AIFF in situ
 
 def fl_log(level, text):
@@ -1678,7 +1705,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
         if path in ('/', '/index.html', '/sets', '/sets2', '/find', '/browse',
-                    '/library', '/inbox'):
+                    '/library', '/inbox', '/settings'):
             html_path = os.path.join(TOOL_DIR, 'convertidor.html')
             try:
                 with open(html_path, 'rb') as fh:
@@ -1712,7 +1739,31 @@ class Handler(BaseHTTPRequestHandler):
             import library_backup
             self._json(library_backup.status())
         elif path == '/api/settings':
-            self._json(prefs.load())
+            # ⚠ Never the cloud key: the screen has no use for it, and the less
+            # a page holds, the less it can leak.
+            cfg = prefs.load()
+            self._json(cfg)
+        elif path == '/api/settings/context':
+            # What the Settings screen offers to choose from: the library it
+            # found, the colour labels and MyTag groups that exist, and what
+            # "automatic" would pick for each group.
+            lib_path = prefs.find_library() or ''
+            out = {'library': {'path': lib_path, 'found': bool(lib_path and os.path.exists(lib_path)),
+                               'chosen': (prefs.load().get('library_db') or '').strip()},
+                   'appDir': prefs.APP_DIR, 'colours': [], 'banks': [], 'auto': {}}
+            try:
+                slots = label_slots() or {}
+                out['colours'] = sorted(slots, key=lambda k: slots[k])
+            except Exception:
+                pass
+            try:
+                lib = all_library() or {}
+                banks = lib.get('banks') or []
+                out['banks'] = [b['name'] for b in banks]
+                out['auto'] = prefs.guess_banks(banks, manual=False)
+            except Exception:
+                pass
+            self._json(out)
         elif path == '/api/compat':
             try:
                 with LOCK:
@@ -1754,6 +1805,12 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(out)
             except Exception as e:
                 self._json({'error': str(e)[:300]}, 500)
+
+        elif path == '/api/folders':
+            # Folders of music the library already has and never plays.
+            with LOCK:
+                self._json({k: FOLDERS[k] for k in ('busy', 'done', 'total',
+                                                    'result', 'error')})
 
         elif path == '/api/access':
             # Can the app reach the library and the music files (access.py).
@@ -2850,6 +2907,52 @@ class Handler(BaseHTTPRequestHandler):
             if where and os.path.isdir(where):
                 open_in_file_manager(where)
             self._json({'ok': bool(where)})
+
+        elif path == '/api/folders/scan':
+            with LOCK:
+                started = not FOLDERS['busy']
+                if started:
+                    FOLDERS.update(busy=True, done=0, total=0, error=None)
+            if started:
+                threading.Thread(target=folders_worker, daemon=True).start()
+            self._json({'ok': True})
+
+        elif path == '/api/folders/reveal':
+            # ⚠ Only a folder (or file) the last scan reported, never any path.
+            target = str(data.get('path') or '')
+            with LOCK:
+                res = FOLDERS['result'] or {}
+            known = {f['path'] for f in res.get('folders', []) + res.get('loose', [])}
+            for f in res.get('loose', []):
+                known.update(x['path'] for x in f['files'])
+            if target in known and os.path.exists(target):
+                open_in_file_manager(target, select=True)
+                self._json({'ok': True})
+            else:
+                self._json({'error': 'Not in the last scan.'}, 400)
+
+        elif path == '/api/folders/bin':
+            # ⚠ To the Bin, never deleted; and the folder is looked at again
+            # first (folder_dupes.bin_folder). Never without the user's yes.
+            import folder_dupes as fdu
+            import rekordbox as rb
+            with LOCK:
+                res = FOLDERS['result']
+                busy = FOLDERS['busy']
+            if busy:
+                self._json({'error': 'Still scanning.'}, 409)
+                return
+            try:
+                tracks, _ = rb.load_tracks()
+                out = fdu.bin_folder(str(data.get('path') or ''), res, tracks,
+                                     whole=bool(data.get('whole', True)))
+                with LOCK:
+                    FOLDERS['busy'] = True
+                    FOLDERS.update(done=0, total=0)
+                threading.Thread(target=folders_worker, daemon=True).start()
+                self._json(out)
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 400)
 
         elif path == '/api/access/open':
             import access

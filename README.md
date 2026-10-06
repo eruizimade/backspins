@@ -42,10 +42,10 @@ The first time it opens, a short animated tour shows how it all fits together
 | **Import** | Scan a folder of new music, rename it to `Title - Artist`, convert FLAC to AIFF, and add it to rekordbox under a colour that means "not looked at yet". |
 | **Health** | Duplicates (it compares the real quality and length, keeps the better copy and merges your tags, playlists and cues into it), quality bands, **compatibility by CDJ generation** (which players your library plays on, and exactly which files hold you back), shop branding left in your tags, and missing artwork. |
 | **Teach** | Teach the library a tag ("is this Acid?") or an ordering ("which is more intense?") by answering a few questions. It analyses the audio itself (notes, key, chords, timbre, groove), learns from your answers and your existing tags, tells you how often it is right, and ranks the whole library for you to confirm. |
-| **Your data** | **Access**: whether Backspins can read your rekordbox library and every music file, and if macOS blocks a folder, which setting to change. **Storage**: everything it keeps on disk, in bytes, with where it lives. **Backups**: a copy of your library every hour it changes, kept by age within a size limit you choose, plus rekordbox XML and readable JSON versions that will outlive any change to rekordbox's encryption. |
+| **Your data** | **Access**: whether Backspins can read your rekordbox library and every music file, and if macOS blocks a folder, which setting to change. **Storage**: everything it keeps on disk, in bytes, with where it lives. **Backups**: a copy of your library every hour it changes, kept by age within a size limit you choose, plus rekordbox XML and readable JSON versions that will outlive any change to rekordbox's encryption. **Duplicate folders**: folders rekordbox never plays whose music is already in your library (the FLACs a conversion set aside, an old backup, a downloader's "processed" folder), with the space each one frees; to the Bin only after a second look, and only what really is a duplicate. |
 
 The interface is in **English and Spanish** (it follows your system language;
-switch with EN / ES at the bottom of the sidebar).
+change it in **Settings**).
 
 ## Your words, not ours
 
@@ -133,7 +133,9 @@ starts.
 
 ## Settings
 
-Plain JSON in your app folder (`~/.config/backspins/settings.json`, or
+Everything below can be changed on the **Settings** screen (theme, language, where your
+library is, the colours for each tagging step, which MyTag group is which, genre corrections,
+import folders, the backup limit); it is kept as plain JSON in your app folder (`~/.config/backspins/settings.json`, or
 `%APPDATA%\Backspins\settings.json` on Windows). Delete the file and every
 default comes back.
 

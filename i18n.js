@@ -37,10 +37,80 @@
   X(/^([\d.,]+) at (\S+)$/, '$1 en $2');                 // "6 at NEW" (menu bar)
   // Words that are ALSO tag or colour names: translated only inside these.
   var SCOPED = {
-    '#themePick': {'Auto': 'Auto', 'Light': 'Claro', 'Dark': 'Oscuro'}
+    '#themePick': {'Auto': 'Auto', 'Light': 'Claro', 'Dark': 'Oscuro'},
+    '#setTheme': {'Auto': 'Auto', 'Light': 'Claro', 'Dark': 'Oscuro'}
   };
 
   A({
+    "Settings": "Ajustes",
+    "Appearance": "Apariencia",
+    "Theme": "Tema",
+    "Auto follows your computer.": "Auto sigue a tu ordenador.",
+    "Language": "Idioma",
+    "The screens, not your tags or titles.": "Las pantallas, no tus tags ni tus títulos.",
+    "rekordbox library": "Biblioteca de rekordbox",
+    "Database": "Base de datos",
+    "found automatically": "se encuentra sola",
+    "Find it for me": "Búscala tú",
+    "Advanced": "Avanzado",
+    "Encryption key": "Clave de cifrado",
+    "Only if a future rekordbox changes it. Leave empty otherwise.": "Solo si un rekordbox futuro la cambia. Si no, déjala vacía.",
+    "the built-in one": "la que viene incluida",
+    "Tagging workflow": "Flujo de etiquetado",
+    "rekordbox colour labels for each step. Choose the ones you use.": "Las etiquetas de color de rekordbox para cada paso. Elige las que usas.",
+    "New music arrives as": "La música nueva llega como",
+    "Imported tracks get it, and the Inbox opens on it.": "Se pone a lo que importas, y la Entrada abre en ese color.",
+    "Tagged, beatgrid to check": "Etiquetada, falta el beatgrid",
+    "What \"Mark … · next\" stamps. Empty: the ready colour.": "Lo que pone \"Marcar … · siguiente\". Vacío: el color de lista.",
+    "Ready to play": "Lista para pinchar",
+    "Sets only offers these. Empty: every track counts.": "Sets solo ofrece estas. Vacío: cuentan todas.",
+    "Energy in the comment": "Energía en el comentario",
+    "Reads \"6 - dark roller\" as energy 6 and the note \"dark roller\".": "Lee \"6 - dark roller\" como energía 6 y la nota \"dark roller\".",
+    "MyTag groups": "Grupos de MyTag",
+    "Backspins works out which group is which from what is in it. Choose one only if it guessed wrong.": "Backspins deduce qué grupo es cuál por lo que contiene. Elige uno solo si se ha equivocado.",
+    "Kind of night": "Tipo de noche",
+    "What Sets offers to start from.": "Lo que Sets ofrece para empezar.",
+    "The directions Sets moves in.": "Las direcciones en las que se mueve Sets.",
+    "Running order": "Orden de la noche",
+    "Opener, warm-up, peak… in the order a night goes.": "Apertura, calentamiento, pico… en el orden en que va una noche.",
+    "Not a set context": "No son contexto de set",
+    "Housekeeping groups that Sets should ignore.": "Grupos de organización que Sets debe ignorar.",
+    "No MyTags yet?": "¿Aún sin MyTags?",
+    "Add a ready-made vocabulary: 25 tags in four groups.": "Añade un vocabulario hecho: 25 tags en cuatro grupos.",
+    "Starter vocabulary": "Vocabulario inicial",
+    "Genre spellings": "Correcciones de género",
+    "Your own corrections, applied when tracks come in: \"Reggeaton\" → \"Reggaeton\".": "Tus propias correcciones, aplicadas al entrar las pistas: \"Reggeaton\" → \"Reggaeton\".",
+    "Add a correction": "Añadir una corrección",
+    "No corrections yet.": "Aún no hay correcciones.",
+    "as written": "como está escrito",
+    "should be": "cómo debería ser",
+    "Remove": "Quitar",
+    "New music folder": "Carpeta de música nueva",
+    "Where Import starts.": "Donde empieza Importar.",
+    "choose a folder": "elige una carpeta",
+    "Choose…": "Elegir…",
+    "Output folder": "Carpeta de salida",
+    "Where converted and renamed files go.": "Donde van los archivos convertidos y renombrados.",
+    "the default": "la de por defecto",
+    "Move originals aside": "Apartar los originales",
+    "Into \"processed/\" in the source folder once dealt with.": "A \"processed/\" dentro de la carpeta de origen una vez tratados.",
+    "Oldest go first; the two newest always stay.": "Se van primero las más antiguas; las dos más nuevas siempre se quedan.",
+    "Everything Backspins keeps": "Todo lo que guarda Backspins",
+    "Sizes, folders, and what can be cleared.": "Tamaños, carpetas y lo que se puede vaciar.",
+    "Help": "Ayuda",
+    "The short animated tour.": "El recorrido animado corto.",
+    "Show the tour": "Ver el recorrido",
+    "Settings file": "Archivo de ajustes",
+    "Saved ✓": "Guardado ✓",
+    "Saved — reloading…": "Guardado — recargando…",
+    "Could not read the settings.": "No se pudieron leer los ajustes.",
+    "Type the folder in the box.": "Escribe la carpeta en la casilla.",
+    "Using the one you chose.": "Se usa la que elegiste.",
+    "Found automatically.": "Encontrada automáticamente.",
+    "Not found. Is the drive it lives on connected?": "No se encuentra. ¿Está conectado el disco donde está?",
+    "— same as ready —": "— igual que lista —",
+    "— any track —": "— cualquier pista —",
+    "Automatic": "Automático",
     'Nothing is uploaded: the library and your music stay on this computer.': 'No se sube nada: la biblioteca y tu música se quedan en este ordenador.',
     'Terminal (or the app you started Backspins from) and Python': 'Terminal (o la app desde la que abriste Backspins) y Python',
     "\"Beatport Top 100 Downloads December 2025\" no es l'album, pero si que diu d'on ve el disc. Ho decideixes tu.": "\"Beatport Top 100 Downloads December 2025\" no es el álbum, pero sí dice de dónde viene el disco. Lo decides tú.",
@@ -902,6 +972,8 @@
     "✓ in it": "✓ ya está"
   });
   P([
+    ["Automatic ({0})", "Automático ({0})"],
+    ["{0} (not in the library)", "{0} (no está en la biblioteca)"],
     ["(System Settings → Privacy & Security → {0}).", "(Ajustes del Sistema → Privacidad y seguridad → {0:t})."],
     ["(kept: {0})", "(se mantiene: {0})"],
     ["(rekordbox XML + every table as JSON) — opens without rekordbox or its key: {0}.", "(XML de rekordbox + cada tabla en JSON) — se abre sin rekordbox ni su clave: {0}."],
@@ -1251,6 +1323,39 @@
     ["— the exact file, puts rekordbox back as it was: {0}.", "— el archivo exacto, deja rekordbox tal como estaba: {0}."],
     ["— {0} vetted (“{1}”); {2} left out: {3}", "— {0} revisadas (“{1}”); {2} fuera: {3}"],
     ["→ {0} (untagged: keeps its name)", "→ {0} (sin tags: mantiene su nombre)"]
+  ]);
+
+  // ── Duplicate folders (Your data) ─────────────────────────────────────────
+  A({
+    "Duplicate folders": "Carpetas duplicadas",
+    "Look for them": "Buscarlas",
+    "Look again": "Buscar otra vez",
+    "Folders of music that rekordbox never plays and that is already in your library: the originals a conversion set aside, an old backup, a downloader's \"processed\" folder.": "Carpetas de música que rekordbox nunca reproduce y que ya está en tu biblioteca: los originales que apartó una conversión, una copia de seguridad antigua, la carpeta \"processed\" de un descargador.",
+    "Looking through your music folders…": "Revisando tus carpetas de música…",
+    "of music you already have, in places rekordbox never plays": "de música que ya tienes, en sitios que rekordbox nunca reproduce",
+    "No duplicate folders: every copy of your music is the one rekordbox plays.": "No hay carpetas duplicadas: cada copia de tu música es la que reproduce rekordbox.",
+    "It holds other files too: only the duplicates go.": "Tiene otros archivos: solo se van los duplicados.",
+    "For example:": "Por ejemplo:",
+    "Which ones": "Cuáles",
+    "Loose copies in": "Copias sueltas en",
+    "Show": "Mostrar",
+    "Move folder to Bin": "Mover la carpeta a la Papelera",
+    "Move duplicates to Bin": "Mover los duplicados a la Papelera",
+    "Moving…": "Moviendo…",
+    "Only rekordbox is checked: if Serato, Engine DJ, Traktor or a music project uses these files, keep them.": "Solo se mira rekordbox: si Serato, Engine DJ, Traktor o un proyecto de música usa estos archivos, guárdalos.",
+    "Everything goes to the Bin, and each folder is looked at again just before.": "Todo va a la Papelera, y cada carpeta se vuelve a revisar justo antes.",
+    "Looked in:": "Revisado:",
+    "That folder is not in the last scan. Scan again.": "Esa carpeta no está en la última búsqueda. Busca otra vez.",
+    "Still scanning.": "Todavía buscando."
+  });
+  P([
+    ["{0} music files looked at", "{0} archivos de música revisados"],
+    ["{0} of {1} tracks already in your library.", "{0} de {1} pistas ya están en tu biblioteca."],
+    ["{0} not in your library — they stay.", "{0} no están en tu biblioteca — se quedan."],
+    ["{0} tracks already in your library, straight in this folder.", "{0} pistas que ya están en tu biblioteca, sueltas en esta carpeta."],
+    ["Move the folder “{0}” ({1}) to the Bin? All the music in it is already in your library.", "¿Mover la carpeta “{0}” ({1}) a la Papelera? Toda su música ya está en tu biblioteca."],
+    ["Move the {0} duplicates in “{1}” ({2}) to the Bin? Anything that is not already in your library stays where it is.", "¿Mover los {0} duplicados de “{1}” ({2}) a la Papelera? Lo que no esté ya en tu biblioteca se queda donde está."],
+    ["{0} moved to the Bin. {1} had changed since the scan and stayed.", "{0} movidos a la Papelera. {1} habían cambiado desde la búsqueda y se quedan."]
   ]);
 
   // ── templates → regexes, compiled once, longest literal first ─────────────

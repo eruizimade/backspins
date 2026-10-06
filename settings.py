@@ -109,6 +109,7 @@ DEFAULTS = {
     # looks broken rather than unconfigured.
     'mood_bank': '',
     'timing_bank': '',
+    'type_bank': '',
     # Groups that are not a set context at all (housekeeping tags).
     'ignored_banks': ['MISC'],
     # Your own order for the tags inside each group, set by dragging them in
@@ -122,7 +123,7 @@ DEFAULTS = {
 }
 
 
-def guess_banks(banks):
+def guess_banks(banks, manual=True):
     """Which MyTag group is the mood axis, which is the set arc, which is the kind of night.
 
     `banks` is what `rekordbox.load_tracks` produces: [{name, tags:[…]}, …].
@@ -133,7 +134,7 @@ def guess_banks(banks):
     one left. A friend calling them "Vibe" and "Moment" gets a working set
     builder without touching a config file.
     """
-    cur = load()
+    cur = load() if manual else dict(DEFAULTS, ignored_banks=load().get('ignored_banks') or [])
     mood = (cur.get('mood_bank') or '').strip()
     timing = (cur.get('timing_bank') or '').strip()
     kind = (cur.get('type_bank') or '').strip()
