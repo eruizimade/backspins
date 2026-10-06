@@ -32,13 +32,16 @@
 
      Light is the Mac's own light appearance; the dark palette is the booth. */
   :root{
-    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro","Helvetica Neue",Helvetica,Arial,sans-serif;
-    --bg:#f5f5f7; --rail:#ebebef; --deck:#fbfbfd; --card:#ffffff; --field:#f0f0f3;
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro","Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    /* Backspins' own orange (the label of the record in the icon): primary
+       actions, focus and the brand — never a selected state or a meaning. */
+    --bs:#ff6a2b; --bs2:#ffb347; --bsg:linear-gradient(135deg,var(--bs),var(--bs2));
+    --bg:#f6f6f8; --rail:#ededf1; --deck:#fbfbfd; --card:#ffffff; --field:#f0f0f3;
     --line:#e3e3e8; --line2:#d2d2d7;
     --text:#1d1d1f; --dim:#6e6e73; --faint:#8e8e93;
-    /* Focus, hover borders, sliders: the system blue, and nothing else. */
-    --accent:#007aff; --accent-line:#b5d5ff; --accent-soft:#eef2f8;
-    --accent-ink:#0059c2;
+    /* Focus, hover borders, sliders: the brand orange, and nothing else. */
+    --accent:#e8551a; --accent-line:#ffc9ad; --accent-soft:#fff1ea;
+    --accent-ink:#c2410c;
     /* Chosen / primary = inverted. */
     --accent-fill:#1d1d1f; --on-accent:#ffffff;
     --err:#e0352b; --warn:#b25d00; --info:#0059c2;
@@ -65,11 +68,11 @@
   /* The booth. */
   :root[data-theme="dark"]{
     color-scheme:dark;
-    --bg:#121418; --rail:#15171c; --deck:#16181d; --card:#1a1d23; --field:#22262e;
-    --line:#262a32; --line2:#343a45;
-    --text:#e9ebf0; --dim:#a4abb8; --faint:#6f7786;
-    --accent:#4c8dff; --accent-line:#34507e; --accent-soft:#1d2129;
-    --accent-ink:#9cc0ff;
+    --bg:#0e1014; --rail:#111318; --deck:#13161c; --card:#181b22; --field:#20242d;
+    --line:#262a33; --line2:#343a45;
+    --text:#eceef3; --dim:#a4abb8; --faint:#6f7786;
+    --accent:#ff7a3d; --accent-line:#5a3322; --accent-soft:#241a16;
+    --accent-ink:#ffb37a;
     --accent-fill:#e9ebf0; --on-accent:#121418;
     --err:#ef5a5a; --warn:#f5aa55; --info:#9cc0ff;
     --err-soft:#2c1c1e; --warn-soft:#2b2219; --ok-soft:#18281f;
@@ -93,11 +96,11 @@
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
       color-scheme:dark;
-      --bg:#121418; --rail:#15171c; --deck:#16181d; --card:#1a1d23; --field:#22262e;
-      --line:#262a32; --line2:#343a45;
-      --text:#e9ebf0; --dim:#a4abb8; --faint:#6f7786;
-      --accent:#4c8dff; --accent-line:#34507e; --accent-soft:#1d2129;
-      --accent-ink:#9cc0ff;
+      --bg:#0e1014; --rail:#111318; --deck:#13161c; --card:#181b22; --field:#20242d;
+      --line:#262a33; --line2:#343a45;
+      --text:#eceef3; --dim:#a4abb8; --faint:#6f7786;
+      --accent:#ff7a3d; --accent-line:#5a3322; --accent-soft:#241a16;
+      --accent-ink:#ffb37a;
       --accent-fill:#e9ebf0; --on-accent:#121418;
       --err:#ef5a5a; --warn:#f5aa55; --info:#9cc0ff;
       --err-soft:#2c1c1e; --warn-soft:#2b2219; --ok-soft:#18281f;
@@ -166,8 +169,13 @@
   .rail{position:sticky;top:0;height:100vh;background:var(--rail);
         border-right:1px solid var(--line);padding:18px 12px 14px;
         display:flex;flex-direction:column;gap:2px;overflow:auto;z-index:45}
-  .brand{font-size:13px;font-weight:600;color:var(--dim);padding:2px 10px 16px;
-         letter-spacing:-.01em}
+  .brand{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:750;color:var(--text);
+         padding:2px 10px 18px;letter-spacing:-.02em}
+  /* The record of the icon, small: vinyl grooves round the orange label. */
+  .brand i{width:22px;height:22px;border-radius:50%;flex:none;
+           background:radial-gradient(circle,#14161b 0 9%,var(--bs) 10% 30%,#14161b 31% 34%,transparent 35%),
+                      repeating-radial-gradient(circle,#1d2027 0 1.5px,#2b2f38 1.5px 2.5px);
+           box-shadow:0 2px 8px rgba(0,0,0,.3)}
   /* In the app the window's traffic lights sit on the top of the rail. */
   .in-app .rail{padding-top:46px}
   .in-app .brand{display:none}
@@ -204,8 +212,8 @@
   .railUpdate{display:flex;flex-direction:column;align-items:flex-start;gap:1px;
               width:100%;padding:8px 10px;border-radius:9px;text-align:left;
               background:color-mix(in srgb, var(--accent) 16%, transparent);
-              color:var(--text);font-size:13px;font-weight:600}
-  .railUpdate small{font-size:12px;font-weight:400;color:var(--dim)}
+              color:var(--text);font-size:13px;font-weight:600;white-space:normal;line-height:1.3}
+  .railUpdate small{font-size:12px;font-weight:400;color:var(--dim);white-space:normal}
   .railUpdate:hover{background:color-mix(in srgb, var(--accent) 24%, transparent);opacity:1}
   .stage{min-width:0;display:flex;flex-direction:column}
   .chips{margin-bottom:4px}
@@ -697,13 +705,14 @@
      view. ⚠ Same classes the player code has always used (.play, .slotname,
      .slottime, .slotwave, .vol) — the layout moved, the wiring did not. */
   .dock{position:sticky;top:0;z-index:40;display:grid;
-        grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
         background:color-mix(in srgb, var(--deck) 86%, transparent);
         -webkit-backdrop-filter:saturate(170%) blur(22px);
         backdrop-filter:saturate(170%) blur(22px);
         border-bottom:1px solid var(--line)}
   .dock.solo{grid-template-columns:minmax(0,1fr)}
-  .dock.solo #slotSet, .dock.solo .blendbar{display:none}
+  .dock.solo #slotSet{display:none}
+  .dock:not(.solo) #slotSet{border-left:1px solid var(--line)}
   .slot{display:flex;align-items:center;gap:22px;padding:16px 24px;min-width:0;
         min-height:112px}
   .dkBtns{display:flex;align-items:center;gap:6px;flex:none}
@@ -772,14 +781,12 @@
   .dock:not(.solo) .dkStats{gap:12px}
   .dock:not(.solo) .dkBpm,.dock:not(.solo) .dkKey{font-size:15px}
   .dock:not(.solo) .dkColor,.dock:not(.solo) .vol{display:none}
-  .blendbar{display:flex;flex-direction:column;align-items:center;justify-content:center;
-            gap:6px;padding:10px 8px;border-left:1px solid var(--line);
-            border-right:1px solid var(--line);white-space:nowrap}
-  .blendbar button{padding:7px 14px;font-size:13px}
-  .blendbar select{width:auto;padding:4px 8px;font-size:12px}
-  .blendNote{font-size:11px;color:var(--dim);max-width:150px;
-             overflow:hidden;text-overflow:ellipsis}
-  .blendbar.on button{background:var(--warn);color:#1d1204}
+  /* Two players side by side on a narrow window: the section steps and the
+     Tag button step aside (T tags, and every list has its own). */
+  @media (max-width:1240px){
+    .dock:not(.solo) .dkPh, .dock:not(.solo) .dkQuick{display:none}
+    .dock:not(.solo) .slotinfo{width:140px}
+  }
   @media (max-width:1250px){
     .slot{gap:14px;padding:14px 18px}
     .slotinfo{width:180px}
@@ -1504,7 +1511,7 @@
                font-size:14px;outline:none;padding:0 4px;margin:0 -4px;box-shadow:none}
   .inBox input:focus{box-shadow:none}
   .inGenreBox .tgAuto{top:calc(100% + 4px)}
-  .inFoot{margin-top:auto;display:flex;align-items:center;gap:10px;
+  .inFoot{margin-top:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
           padding-top:16px;border-top:1px solid var(--line)}
   .inFoot .grow{display:none}
   .inDone{height:50px;padding:0 24px;border-radius:10px;font-size:16px;font-weight:600;
@@ -1523,7 +1530,7 @@
   .inMissing{margin:auto 0 -6px;font-size:13px;color:var(--err-ink)}
   .inMissing:not(.hidden) + .inFoot{margin-top:0}
   .inOr{font-size:13px;color:var(--faint);margin-left:6px;white-space:nowrap}
-  .inRoutes{display:flex;gap:6px;flex:none}
+  .inRoutes{display:flex;gap:6px;flex-wrap:wrap;min-width:0}
   .inRoute{height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--line2);
            background:transparent;color:var(--text);font-size:12.5px;font-weight:600;
            letter-spacing:.02em;display:flex;align-items:center;gap:7px}
@@ -1674,6 +1681,23 @@
   .bkChip.db{border-color:var(--line2)}
   .bkChip.txt{color:var(--ok-ink);border-color:var(--ok-soft);background:var(--ok-soft)}
   .bkWhy{color:var(--faint);font-size:11.5px}
+  /* ── Backspins' look (the website's): a warm glow on a near-black booth,
+     generous corners, confident headings, the orange gradient on the one
+     thing to press. Selected states stay inverted, meanings keep their own
+     colours — this is chrome only. ── */
+  body{background:
+         radial-gradient(1100px 520px at 0% -8%, color-mix(in srgb, var(--bs) 9%, transparent), transparent 70%),
+         radial-gradient(800px 420px at 100% 0%, color-mix(in srgb, var(--bs2) 5%, transparent), transparent 70%),
+         var(--bg);
+       background-attachment:fixed}
+  h1{font-weight:750;letter-spacing:-.03em}
+  h2{font-weight:680;letter-spacing:-.022em}
+  .card{border-radius:16px;box-shadow:var(--sh1)}
+  button{background:var(--bsg);color:#fff;border-radius:10px}
+  button:not([class]){font-weight:600}
+  button:not([class]):not(:disabled):hover{opacity:1;filter:brightness(1.06)}
+  button.ghost{border-radius:10px}
+
   /* ══ the tour: how Backspins works, animated ═════════════════════════════
      Shown once on first launch and from "How it works" in the rail. Every
      scene is rebuilt when its step opens, so its animation plays from the
@@ -1904,7 +1928,7 @@
 <body>
 <div class="app">
 <nav class="rail" aria-label="Sections">
-  <div class="brand">Backspins</div>
+  <div class="brand"><i></i>Backspins</div>
   <div class="tabs">
     <button id="tabInbox" class="navi" type="button"
             title="The ADD pile: listen, tag, send on"><span class="dot"
@@ -1972,18 +1996,6 @@
     <button class="dkQuick" id="dkQuick" type="button"
             title="Tag this track, or add it to a playlist">Tag ＋</button>
     <input type="range" class="vol" min="0" max="1" step="0.02" value="1" title="Volume">
-  </div>
-  <!-- Tasting a join: the two decks, playing at once, tempo matched. This is
-       the one place in the app where BOTH players are meant to sound. -->
-  <div class="blendbar" id="blendBar">
-    <button id="blendGo" type="button" title="Hear the two together">⇄ Blend</button>
-    <select id="blendBars" class="sel" title="How long the blend lasts">
-      <option value="8">8 bars</option>
-      <option value="16">16 bars</option>
-      <option value="32" selected>32 bars</option>
-      <option value="64">64 bars</option>
-    </select>
-    <span class="blendNote" id="blendNote"></span>
   </div>
   <div class="slot empty" id="slotSet">
     <div class="dkBtns">
@@ -2727,7 +2739,7 @@
           <section class="card" style="margin:0">
             <div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
               <h2 style="margin:0" id="poolTitle">Candidates</h2>
-              <div class="row" style="gap:8px;flex:1;justify-content:flex-end;min-width:0">
+              <div class="row" style="gap:8px;flex:1 1 auto;justify-content:flex-end;flex-wrap:wrap">
                 <div class="segmented matchmode" id="matchMode">
                   <button type="button" data-mode="track" class="on">track</button>
                   <button type="button" data-mode="set">set</button>
@@ -2735,7 +2747,7 @@
                 <select id="fFamilyQuick" class="sel selsm" style="max-width:180px">
                   <option value="">All families</option>
                 </select>
-                <input type="text" id="fSearch" spellcheck="false" style="max-width:280px"
+                <input type="text" id="fSearch" spellcheck="false" style="max-width:280px;min-width:160px"
                        placeholder="search: artist, title, comment, tag…">
                 <span class="small" id="poolCount" style="white-space:nowrap"></span>
               </div>
@@ -2775,8 +2787,8 @@
             </select>
             <button id="btnClearSet" class="ghost" type="button">Empty</button>
           </div>
-          <div class="row" style="margin-top:8px">
-            <input type="text" id="setName" placeholder="playlist name" spellcheck="false">
+          <div class="row" style="margin-top:8px;flex-wrap:wrap">
+            <input type="text" id="setName" placeholder="playlist name" spellcheck="false" style="min-width:170px">
             <button id="btnSaveSet" type="button">Save to rekordbox</button>
           </div>
           <div class="row" id="overwriteRow" style="margin-top:8px;display:none">
@@ -3652,7 +3664,7 @@
         }
         if (target === null) return;
         s.audio.currentTime = target;
-        if (s.audio.paused) { if (!BLEND.on) pauseOthers(s);
+        if (s.audio.paused) { pauseOthers(s);
                               s.audio.play().catch(function(){}); }
         drawSlot(s);
       }
@@ -3685,7 +3697,7 @@
           if (best !== null) want = best;
         }
         s.audio.currentTime = want;
-        if (s.audio.paused) { if (!BLEND.on) pauseOthers(s);
+        if (s.audio.paused) { pauseOthers(s);
                               s.audio.play().catch(function(){}); }
         drawSlot(s);
       });
@@ -3712,16 +3724,6 @@
     });
   }
 
-  // ══ tasting a join ══════════════════════════════════════════════════════
-  //
-  // Everywhere else in this app exactly one player sounds at a time — that is
-  // what pauseOthers() is for. Here both must, which is the whole point, so
-  // BLEND.on turns that rule off for as long as the blend lasts and back on
-  // the moment it ends.
-  //
-  // The blend does NOT run through these elements — see blendRun() for why.
-  // They are only paused and their faders restored around it.
-  var BLEND = {on: false, timer: null, ctx: null, nodes: []};
 
   function loadPhrases(s, t){
     s.phrases = [];
@@ -3733,139 +3735,6 @@
     }).catch(function(){});
   }
 
-  function blendStop(quiet){
-    if (BLEND.timer) { clearInterval(BLEND.timer); BLEND.timer = null; }
-    if (BLEND.ctx) {
-      try { (BLEND.nodes || []).forEach(function(n){ try { n.stop(); } catch (e) {} }); }
-      catch (e) {}
-      try { BLEND.ctx.close(); } catch (e) {}
-      BLEND.ctx = null; BLEND.nodes = [];
-    }
-    BLEND.on = false;
-    $('blendBar').classList.remove('on');
-    $('blendGo').textContent = '⇄ Blend';
-    Object.keys(SLOTS).forEach(function(k){
-      var s2 = SLOTS[k];
-      if (s2.audio) { s2.audio.playbackRate = 1; s2.audio.volume = parseFloat(s2.vol.value); }
-    });
-    if (!quiet) $('blendNote').textContent = '';
-  }
-
-  function blendFetch(track, from, secs, rate){
-    var u = '/api/mixclip?path=' + encodeURIComponent(track.path)
-          + '&from=' + from.toFixed(4) + '&secs=' + secs.toFixed(2)
-          + '&rate=' + rate.toFixed(6);
-    return fetch(u).then(function(r){
-      if (!r.ok) throw new Error('clip failed');
-      return r.arrayBuffer();
-    });
-  }
-
-  function blendRun(A, B, p){
-    // ⚠ A real sync, and the reason it is built this way. The first version
-    // matched tempo with playbackRate on the <audio> elements and started the
-    // incoming track from a setInterval. Both are wrong for this:
-    //   · playbackRate moves the pitch, so beat-matching detuned the record;
-    //   · a media element starts when the browser gets round to it, so the
-    //     downbeats landed near each other rather than on each other.
-    // So: the server pre-stretches the incoming track with atempo (time
-    // changes, pitch does not), and both pieces are decoded and SCHEDULED —
-    // start(when) is sample accurate. The clips begin exactly on the beats
-    // the plan chose, so aligning them is arithmetic, not luck.
-    var lead = 8;                       // a moment of A alone, to place it
-    var tail = 4;
-    var blendSecs = p.blendSeconds || 30;
-    var rate = Math.max(0.5, Math.min(2, p.tempoRatio || 1));
-    $('blendNote').textContent = 'rendering…';
-
-    Promise.all([
-      blendFetch(A.track, Math.max(0, (p.outAt || 0) - lead), lead + blendSecs + tail, 1),
-      blendFetch(B.track, p.inAt || 0, blendSecs + tail, rate)
-    ]).then(function(bufs){
-      var Ctx = window.AudioContext || window.webkitAudioContext;
-      var ctx = new Ctx();
-      return Promise.all([ctx.decodeAudioData(bufs[0]), ctx.decodeAudioData(bufs[1])])
-        .then(function(dec){ return {ctx: ctx, a: dec[0], b: dec[1]}; });
-    }).then(function(o){
-      // Stop the ordinary players: this is a different sound path entirely.
-      Object.keys(SLOTS).forEach(function(k){
-        if (SLOTS[k].audio) SLOTS[k].audio.pause();
-      });
-      var ctx = o.ctx;
-      var gA = ctx.createGain(), gB = ctx.createGain();
-      gA.connect(ctx.destination); gB.connect(ctx.destination);
-      var sA = ctx.createBufferSource(), sB = ctx.createBufferSource();
-      sA.buffer = o.a; sB.buffer = o.b;
-      sA.connect(gA); sB.connect(gB);
-
-      var t0 = ctx.currentTime + 0.25;      // a breath, so nothing starts late
-      var cross = t0 + lead;                 // A's out point, to the sample
-      var volA = parseFloat(A.vol.value), volB = parseFloat(B.vol.value);
-
-      // Equal power, scheduled rather than stepped: two records faded straight
-      // down the middle dip exactly where the mix should feel biggest.
-      var N = 64, curveA = new Float32Array(N), curveB = new Float32Array(N);
-      for (var i = 0; i < N; i++) {
-        var k = i / (N - 1);
-        curveA[i] = volA * Math.cos(k * Math.PI / 2);
-        curveB[i] = volB * Math.sin(k * Math.PI / 2);
-      }
-      gA.gain.setValueAtTime(volA, t0);
-      gB.gain.setValueAtTime(0, t0);
-      gA.gain.setValueCurveAtTime(curveA, cross, blendSecs);
-      gB.gain.setValueCurveAtTime(curveB, cross, blendSecs);
-
-      sA.start(t0);
-      sB.start(cross);                       // the downbeats meet here
-      BLEND.ctx = ctx; BLEND.nodes = [sA, sB];
-      BLEND.on = true;
-      $('blendBar').classList.add('on');
-      $('blendGo').textContent = '■ Stop';
-      var pitch = Math.abs(rate - 1) > 0.0005
-        ? '  ·  ' + (p.tempoPercent > 0 ? '+' : '') + p.tempoPercent + '% stretched, pitch kept'
-        : '  ·  same tempo';
-      $('blendNote').textContent = 'locked at ' + fmtTime(p.outAt) + ', '
-        + p.bars + ' bars' + pitch;
-      sB.onended = function(){ blendStop(true);
-        $('blendNote').textContent = 'done'; };
-    }).catch(function(e){
-      blendStop(true);
-      $('blendNote').textContent = 'could not build the mix: ' + (e.message || e);
-    });
-  }
-
-  // Taste a join from the set itself: no need to load the decks first, the
-  // pieces are rendered from the files.
-  function blendPair(a, b){
-    if (BLEND.on) blendStop();
-    SLOTS.set.track = a; SLOTS.pool.track = b;
-    var bars = parseInt($('blendBars').value, 10) || 32;
-    $('blendNote').textContent = 'planning…';
-    post('/api/mixplan', {ids: [String(a.id), String(b.id)], bars: bars})
-      .then(function(j){
-        var p = (j.joins || [])[0];
-        if (!p || p.outAt === null || p.outAt === undefined) {
-          $('blendNote').textContent = 'no beat grid for those two — analyse them in rekordbox';
-          return;
-        }
-        blendRun({track: a, vol: SLOTS.set.vol}, {track: b, vol: SLOTS.pool.vol}, p);
-      }).catch(function(e){ $('blendNote').textContent = String(e); });
-  }
-
-  function blendStart(){
-    if (BLEND.on) { blendStop(); return; }
-    var A = SLOTS.set, B = SLOTS.pool;
-    if (!A.track || !B.track) {
-      $('blendNote').textContent = 'load a track in each player first';
-      return;
-    }
-    blendPair(A.track, B.track);
-  }
-
-  $('blendGo').addEventListener('click', function(){
-    if (BLEND.on) { blendStop(); $('blendGo').textContent = '⇄ Blend'; }
-    else blendStart();
-  });
 
   // Whatever is playing is marked in its list (candidates, set, duplicates…).
   // Compared by path: the same song can appear in more than one place.
@@ -5416,7 +5285,7 @@
 
   // ── the two players ────────────────────────────────────────────────────
 
-  // ⚠ Exactly one deck sounds at a time, everywhere except a blend. Every
+  // ⚠ Exactly one deck sounds at a time, everywhere. Every
   // path that starts audio goes through here first.
   function pauseOthers(except){
     Object.keys(SLOTS).forEach(function(k){
@@ -5437,7 +5306,7 @@
   function togglePlay(s){
     if (!s || !s.audio) return;
     if (s.audio.paused) {
-      if (!BLEND.on) pauseOthers(s);
+      pauseOthers(s);
       LAST_SLOT = s.key;
       s.audio.play().catch(function(){});
     } else {
@@ -5534,7 +5403,7 @@
       s.timeEl.textContent = 'cannot read this file';
     });
 
-    if (!BLEND.on) pauseOthers(s);
+    pauseOthers(s);
     // ⚠ NEVER swallow this. Safari refuses to start playback on a tab it
     // has put in the background, and silence with no explanation is
     // indistinguishable from a broken app — which is exactly how it read.
@@ -5935,14 +5804,6 @@
         b.type = 'button'; b.textContent = '⇄ transition';
         b.title = 'Hear the end of this one and the start of the next';
         b.addEventListener('click', function(){ playTransition(i); });
-        // ⚠ Two different things, deliberately side by side: ⇄ plays one
-        // after the other, which tells you whether they belong together;
-        // Blend plays them OVER each other, tempo matched, which tells you
-        // whether the mix works. Only the second is a mix.
-        var bl = document.createElement('button');
-        bl.type = 'button'; bl.textContent = '⇄ blend';
-        bl.title = 'Hear them over each other, beat matched';
-        bl.addEventListener('click', function(){ blendPair(t, nxt); });
         // Pista harmònica del salt: enganxen les keys? i quant varia el tempo?
         var info = document.createElement('span');
         info.style.fontSize = '11px';
@@ -5964,7 +5825,7 @@
         }
         info.textContent = bits.join('  ·  ');
         var l2 = document.createElement('div'); l2.className = 'line';
-        j.appendChild(l1); j.appendChild(info); j.appendChild(b); j.appendChild(bl);
+        j.appendChild(l1); j.appendChild(info); j.appendChild(b);
         j.appendChild(l2);
         list.appendChild(j);
       }
@@ -6994,9 +6855,41 @@
     try { localStorage.setItem('brCols', JSON.stringify(BR.on)); } catch (e) {}
   }
 
-  function brShown(){
-    return BR_COLS.filter(function(c){ return BR.on[c.id] !== false; });
+  // ⚠ What fits. Twelve columns need ~1,330 px and most windows are
+  // narrower: the last ones (and the Tag button) used to run off the right
+  // edge. So when the chosen columns do not fit, the least needed ones step
+  // aside — in this order — and come back as soon as there is room.
+  var BR_FIT_DROP = ['kbps', 'added', 'comment', 'energy', 'genre', 'color', 'rating'];
+  function brMinW(c){
+    if (BR.w[c.id]) return BR.w[c.id];
+    var m = /(\d+)px/.exec(c.w);
+    return m ? +m[1] : 80;
   }
+  function brShown(){
+    var cols = BR_COLS.filter(function(c){ return BR.on[c.id] !== false; });
+    var list = document.getElementById('brList');
+    var room = list && list.clientWidth;
+    if (!room) return cols;
+    var need = function(cs){
+      return 32 + 62 + cs.reduce(function(n, c){ return n + brMinW(c); }, 0) + 12 * (cs.length + 1) + 24;
+    };
+    for (var i = 0; i < BR_FIT_DROP.length && need(cols) > room; i++) {
+      cols = cols.filter(function(c){ return c.id !== BR_FIT_DROP[i]; });
+    }
+    return cols;
+  }
+  (function(){
+    var t = null, last = 0;
+    window.addEventListener('resize', function(){
+      clearTimeout(t);
+      t = setTimeout(function(){
+        var list = document.getElementById('brList');
+        if (!list || !list.offsetParent || list.clientWidth === last) return;
+        last = list.clientWidth;
+        if (typeof brRender === 'function') brRender();
+      }, 150);
+    });
+  })();
 
   function brFmt(sec){
     if (!sec) return '';

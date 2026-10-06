@@ -2151,62 +2151,6 @@ class Handler(BaseHTTPRequestHandler):
                 except Exception:
                     pass
             self._json(data)
-        elif path == '/api/mixclip':
-            # A short piece of a track, rendered to WAV, already stretched to
-            # the tempo it has to play at.
-            #
-            # ⚠ This is what makes a real sync possible instead of a rough
-            # one. Two things the <audio> path cannot do:
-            #   · `playbackRate` moves the PITCH — there is no time-stretch in
-            #     a media element, so beat-matching detuned the record. ffmpeg
-            #     `atempo` stretches time and leaves the pitch alone.
-            #   · a media element cannot be told to start at an exact instant;
-            #     the browser starts it when it gets round to it. A decoded
-            #     buffer can be scheduled to the sample, which is the whole
-            #     difference between "close" and "locked".
-            import subprocess, tempfile as _tf
-            try:
-                q = parse_qs(parsed.query)
-                src = converted_sibling((q.get('path') or [''])[0])
-                if not src or not path_allowed(src) or not os.path.isfile(src):
-                    self.send_error(404)
-                    return
-                start = max(0.0, float((q.get('from') or ['0'])[0]))
-                secs = max(1.0, min(240.0, float((q.get('secs') or ['90'])[0])))
-                rate = float((q.get('rate') or ['1'])[0])
-                rate = max(0.5, min(2.0, rate))
-                conv = STATE.get('converter') or detect_converter()
-                if not conv:
-                    self.send_error(500, 'No converter found')
-                    return
-                af = []
-                if abs(rate - 1.0) > 0.0005:
-                    af = ['-af', 'atempo=%.6f' % rate]
-                # ⚠ -ss BEFORE -i seeks by keyframe and can land tens of
-                # milliseconds out, which is exactly the error this endpoint
-                # exists to remove. Accurate seek costs a little decode time
-                # and is the only version worth having here.
-                cmd = ([conv, '-hide_banner', '-loglevel', 'error',
-                        '-i', src, '-ss', '%.6f' % start, '-t', '%.6f' % secs,
-                        '-map', '0:a:0'] + af +
-                       ['-ac', '2', '-ar', '44100', '-c:a', 'pcm_s16le',
-                        '-f', 'wav', 'pipe:1'])
-                out = subprocess.run(cmd, capture_output=True, timeout=180)
-                if out.returncode or not out.stdout:
-                    self.send_error(500, 'Could not render the clip')
-                    return
-                self.send_response(200)
-                self.send_header('Content-Type', 'audio/wav')
-                self.send_header('Content-Length', str(len(out.stdout)))
-                self.send_header('Cache-Control', 'no-store')
-                self.end_headers()
-                self.wfile.write(out.stdout)
-            except Exception:
-                try:
-                    self.send_error(500, 'Could not render the clip')
-                except Exception:
-                    pass
-
         elif path == '/api/audio':
             target = converted_sibling((parse_qs(parsed.query).get('path') or [''])[0])
             if target and not path_allowed(target):
