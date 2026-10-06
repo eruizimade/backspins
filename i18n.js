@@ -42,6 +42,19 @@
   };
 
   A({
+    "Converting needs ffmpeg": "Para convertir hace falta ffmpeg",
+    "A free audio tool. Backspins can install it for you, inside its own folder — one click, nothing else changes.": "Una herramienta de audio gratuita. Backspins puede instalarla por ti, dentro de su propia carpeta — un clic, no cambia nada más.",
+    "Install ffmpeg": "Instalar ffmpeg",
+    "Audio converter (ffmpeg)": "Convertidor de audio (ffmpeg)",
+    "Installing…": "Instalando…",
+    "Downloading… {0}%": "Descargando… {0}%",
+    "Installed ✓": "Instalado ✓",
+    "ffmpeg {0}, installed by Backspins.": "ffmpeg {0}, instalado por Backspins.",
+    "Using the ffmpeg already on this computer.": "Se usa el ffmpeg que ya hay en este ordenador.",
+    "Not installed: converting FLAC to AIFF and some previews need it.": "No instalado: hace falta para convertir FLAC a AIFF y para algunas escuchas.",
+    "Not installed. There is no ready-made build for this computer: get it from ffmpeg.org.": "No instalado. No hay una versión lista para este ordenador: consíguela en ffmpeg.org.",
+    "Remove the ffmpeg Backspins installed? You can install it again any time.": "¿Quitar el ffmpeg que instaló Backspins? Puedes volver a instalarlo cuando quieras.",
+    "The download did not match what was expected, so it was not used. Try again later.": "La descarga no coincide con lo esperado, así que no se ha usado. Inténtalo más tarde.",
     "Everything here is saved the moment you change it.": "Todo lo de aquí se guarda en cuanto lo cambias.",
     "General": "General",
     "Library": "Biblioteca",

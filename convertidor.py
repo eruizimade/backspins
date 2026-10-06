@@ -1743,6 +1743,14 @@ class Handler(BaseHTTPRequestHandler):
             # a page holds, the less it can leak.
             cfg = prefs.load()
             self._json(cfg)
+        elif path == '/api/ffmpeg':
+            import ffmpeg_get
+            st = ffmpeg_get.status()
+            # Just installed: the converter the app uses is found again.
+            if st['installed'] and not STATE.get('converter'):
+                STATE['converter'] = detect_converter()
+            st['converter'] = STATE.get('converter')
+            self._json(st)
         elif path == '/api/update':
             import updates
             self._json(updates.status())
@@ -2956,6 +2964,19 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(out)
             except Exception as e:
                 self._json({'error': str(e)[:300]}, 400)
+
+        elif path == '/api/ffmpeg/install':
+            import ffmpeg_get
+            try:
+                self._json(ffmpeg_get.install())
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 400)
+
+        elif path == '/api/ffmpeg/remove':
+            import ffmpeg_get
+            st = ffmpeg_get.remove()
+            STATE['converter'] = detect_converter()
+            self._json(st)
 
         elif path == '/api/update/check':
             import updates

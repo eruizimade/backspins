@@ -24,9 +24,9 @@ Get the latest build from the [Releases](../../releases) page:
   `Backspins.app` to Applications. The app is not notarised yet, so the first
   time you need to right-click it and choose **Open**.
 
-For converting files you also need **ffmpeg**: `winget install ffmpeg` on
-Windows, `brew install ffmpeg` on macOS. Without it everything else still
-works. On macOS, conversion falls back to the system's own `afconvert`.
+Converting files (FLAC → AIFF) needs **ffmpeg**, a free audio tool: Backspins
+installs it for you with one click (Import, or Settings → Importing music), into its own
+folder, checked against a fixed checksum. Everything else works without it.
 
 ## What it does
 

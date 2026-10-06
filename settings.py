@@ -53,6 +53,15 @@ APP_DIR = (os.environ.get('BACKSPINS_HOME') or os.environ.get('BACKSPIN_HOME')
 # lives somewhere read-only (Program Files, a signed .app), so it uses APP_DIR.
 DATA_DIR = APP_DIR if FROZEN else os.path.dirname(os.path.abspath(__file__))
 BACKUP_DIR = os.path.join(DATA_DIR, 'backups')
+
+# Tools the app installs for you (ffmpeg_get.py), FIRST on the PATH so every
+# "ffmpeg" the app runs finds them. ⚠ Plus Homebrew's folders: an app opened
+# from the Finder gets a bare PATH and would not see a brew-installed ffmpeg.
+TOOLS_DIR = os.path.join(APP_DIR, 'bin')
+_extra = [TOOLS_DIR] + (['/opt/homebrew/bin', '/usr/local/bin'] if sys.platform == 'darwin' else [])
+_path = os.environ.get('PATH', '').split(os.pathsep)
+os.environ['PATH'] = os.pathsep.join([TOOLS_DIR] + [p for p in _path if p and p != TOOLS_DIR]
+                                     + [p for p in _extra[1:] if p not in _path])
 SETTINGS_FILE = os.path.join(APP_DIR, 'settings.json')
 
 # The published SQLCipher passphrase for rekordbox 6.6.5+. It is used as a

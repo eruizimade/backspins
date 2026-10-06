@@ -1735,6 +1735,13 @@
   .stFix input{flex:1;min-width:0} .stFix span{color:var(--faint)}
   #setFixAdd{margin-top:8px}
   .stTabs{margin:0 0 14px}
+  .ffCard{margin-bottom:12px;border-color:color-mix(in srgb,var(--bs) 40%,var(--line))}
+  .ffRow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .ffText{flex:1;min-width:240px;display:flex;flex-direction:column;gap:3px;font-size:13.5px}
+  .ffText span{color:var(--dim)}
+  .ffProg{height:6px;border-radius:99px;background:var(--field);overflow:hidden;margin:10px 0 2px}
+  .ffProg i{display:block;height:100%;width:0;background:var(--bsg);transition:width .4s}
+  .ffMsg{color:var(--err-ink);margin-top:6px}
   .railHealth{display:flex;align-items:center;gap:6px}
   .railHealth .n{margin-left:auto}
   .railSettings{margin-top:6px}
@@ -2100,6 +2107,13 @@
 
   <!-- ══════════════ CONVERTIR ══════════════ -->
   <div id="viewConv">
+    <!-- No ffmpeg on this computer: fetch it from here (ffmpeg_get.py). -->
+    <section class="card ffCard hidden" id="ffCard">
+      <div class="ffRow"><div class="ffText"><b>Converting needs ffmpeg</b>
+        <span>A free audio tool. Backspins can install it for you, inside its own folder — one click, nothing else changes.</span></div>
+        <button type="button" class="ffGo">Install ffmpeg</button></div>
+      <div class="ffProg hidden"><i></i></div><div class="ffMsg small"></div>
+    </section>
     <section class="card">
       <label for="source">Source folder</label>
       <div class="row">
@@ -2784,6 +2798,10 @@
       <div class="stRowS"><div class="stL">Output folder<small>Where converted and renamed files go.</small></div>
         <div class="stCtl"><input type="text" id="setOutput" data-key="output_folder" spellcheck="false" placeholder="the default">
           <button class="ghost" data-pick="setOutput" type="button">Choose…</button></div></div>
+      <div class="stRowS"><div class="stL">Audio converter (ffmpeg)<small id="setFfState">…</small></div>
+        <div class="stBtns"><button type="button" class="ffGo" id="setFfGo">Install ffmpeg</button>
+          <button class="ghost hidden" id="setFfRemove" type="button">Remove</button></div></div>
+      <div class="ffProg hidden" id="setFfProg"><i></i></div>
       <div class="stRowS"><div class="stL">Move originals aside<small>Into "processed/" in the source folder once dealt with.</small></div>
         <label class="stSwitch"><input type="checkbox" id="setMove" data-key="move_processed"><i></i></label></div>
     </section>
@@ -3372,10 +3390,8 @@
   // ───────────────────────── conversion
   function render(s){
     var phase = s.phase;
-    if (s.converter === null) {
-      showBanner("No audio converter found (install ffmpeg). "
-        + "FLAC files cannot be converted.");
-    }
+    // No converter: the Import screen offers to install one (ffLoad).
+    $('ffCard').classList.toggle('hidden', s.converter !== null);
     if (!$('output').value) $('output').value = s.default_output || '';
 
     $('btnScan').disabled = (phase === 'scanning' || phase === 'processing');
@@ -12474,7 +12490,7 @@
   function setLoad(){
     return Promise.all([fetch('/api/settings').then(function(r){ return r.json(); }),
                         fetch('/api/settings/context').then(function(r){ return r.json(); })])
-      .then(function(a){ SETS.cfg = a[0]; SETS.ctx = a[1]; setRender(); updLoad(); })
+      .then(function(a){ SETS.cfg = a[0]; SETS.ctx = a[1]; setRender(); updLoad(); ffLoad(); })
       .catch(function(){ setFlash('Could not read the settings.', true); });
   }
   $('tabSettings').addEventListener('click', function(){ setTab('settings'); setLoad(); });
@@ -12532,6 +12548,50 @@
   $('setOpenData').addEventListener('click', function(){ $('tabBackups').click(); });
   $('setTour').addEventListener('click', function(){ if (window.bsTour) window.bsTour(); });
   $('setReveal').addEventListener('click', function(){ post('/api/storage/reveal', {where: 'app'}); });
+  // ── ffmpeg, installed from here (ffmpeg_get.py) ──
+  var FF = {timer: null};
+  function ffSize(b){ return b ? Math.round(b / 1048576) + ' MB' : ''; }
+  function ffPaint(st){
+    var job = st.job || {}, busy = job.phase === 'downloading' || job.phase === 'installing';
+    var pct = job.total ? Math.round(job.done / job.total * 100) : 0;
+    [].forEach.call(document.querySelectorAll('.ffProg'), function(p){
+      p.classList.toggle('hidden', !busy); p.firstChild.style.width = (job.phase === 'installing' ? 100 : pct) + '%';
+    });
+    [].forEach.call(document.querySelectorAll('.ffGo'), function(b){
+      b.disabled = busy || !st.offer;
+      b.textContent = busy ? (job.phase === 'installing' ? tf('Installing…') : tf('Downloading… {0}%', pct))
+                           : (st.installed ? tf('Installed ✓') : tf('Install ffmpeg') + (st.size ? ' · ' + ffSize(st.size) : ''));
+      if (st.installed && !busy) b.disabled = true;
+    });
+    var msg = job.phase === 'error' ? job.error
+      : st.installed ? (st.kind === 'app' ? tf('ffmpeg {0}, installed by Backspins.', st.version || '') : tf('Using the ffmpeg already on this computer.'))
+      : st.offer ? tf('Not installed: converting FLAC to AIFF and some previews need it.')
+      : tf('Not installed. There is no ready-made build for this computer: get it from ffmpeg.org.');
+    var card = $('ffCard').querySelector('.ffMsg'); card.textContent = job.phase === 'error' ? job.error : '';
+    if ($('setFfState')) {
+      $('setFfState').textContent = msg;
+      $('setFfState').classList.toggle('bad', job.phase === 'error');
+      $('setFfRemove').classList.toggle('hidden', !(st.installed && st.kind === 'app'));
+    }
+    if (st.installed && job.phase === 'done') $('ffCard').classList.add('hidden');
+    clearTimeout(FF.timer);
+    if (busy) FF.timer = setTimeout(ffLoad, 500);
+  }
+  function ffLoad(){
+    return fetch('/api/ffmpeg').then(function(r){ return r.json(); }).then(ffPaint).catch(function(){});
+  }
+  [].forEach.call(document.querySelectorAll('.ffGo'), function(b){
+    b.addEventListener('click', function(){
+      post('/api/ffmpeg/install', {}).then(function(st){ ffPaint(st); setTimeout(ffLoad, 400); })
+        .catch(function(e){ alert(e.message || e); });
+    });
+  });
+  $('setFfRemove').addEventListener('click', function(){
+    if (!confirm(tf('Remove the ffmpeg Backspins installed? You can install it again any time.'))) return;
+    post('/api/ffmpeg/remove', {}).then(ffPaint);
+  });
+  $('tabConv').addEventListener('click', ffLoad);
+
   // ── updates: is there a newer Backspins (updates.py) ──
   var UPD2 = {st: null};
   // Built from pieces with data in them, so translated here, piece by piece.

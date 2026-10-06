@@ -374,8 +374,8 @@ class Controller(NSObject):
         # Mac app if it is installed, else Chrome. The toolkit window is the
         # player, and opening a second one somewhere else gives you two players
         # quietly fighting over the same queue.
-        for cmd in (['open', '-a', 'Backspins'], ['open', '-a', 'Rekordbox Toolkit'],
-                    ['open', '-a', 'Google Chrome', url]):
+        names = ['Backspins', 'Rekordbox Toolkit']
+        for cmd in [['open', '-a', n] for n in names] + [['open', '-a', 'Google Chrome', url]]:
             try:
                 subprocess.run(cmd, check=True, capture_output=True, timeout=10)
                 return
