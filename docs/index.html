@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en" data-l="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backspins — your rekordbox library, in shape</title>
+<meta name="description" content="A free desktop app for DJs who use rekordbox: tag while you listen, clean duplicates, check CDJ compatibility, build sets by key and feel. Windows and macOS.">
+<meta property="og:title" content="Backspins — your rekordbox library, in shape">
+<meta property="og:description" content="Tag while you listen, clean duplicates, check CDJ compatibility, build sets that flow. Free, for Windows and macOS.">
+<meta property="og:image" content="https://eruizimade.github.io/backspins/icon.png">
+<link rel="icon" href="favicon.png">
+<script>
+  // Spanish for Spanish browsers; the switch at the top remembers a choice.
+  (function(){
+    var l = 'en';
+    try { l = localStorage.getItem('bs_site_lang') || ''; } catch (e) {}
+    if (l !== 'en' && l !== 'es') l = /^es\b/i.test(navigator.language || '') ? 'es' : 'en';
+    document.documentElement.setAttribute('data-l', l);
+    document.documentElement.lang = l;
+  })();
+</script>
+<style>
+  :root{
+    --bg:#0e1014; --bg2:#13161c; --card:#181b22; --field:#20242d; --line:#262a33; --line2:#343a45;
+    --text:#eceef3; --dim:#a4abb8; --faint:#6f7786;
+    --bs:#ff6a2b; --bs2:#ffb347; --bsg:linear-gradient(135deg,var(--bs),var(--bs2));
+    --ok:#6fd48c; --ok-soft:#18281f; --warn:#f5aa55; --warn-soft:#2b2219;
+    --w-low:#e4573f; --w-mid:#1f9e6b; --w-high:#3b6fd4;
+    --sh:0 30px 80px rgba(0,0,0,.45),0 2px 8px rgba(0,0,0,.25);
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Inter,Helvetica,Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:light){
+    :root{--bg:#f6f6f8;--bg2:#ffffff;--card:#ffffff;--field:#f0f0f3;--line:#e3e3e8;--line2:#d2d2d7;
+          --text:#16181d;--dim:#5d6270;--faint:#8e8e93;--ok:#1b7a35;--ok-soft:#e8f6ec;--warn:#8a4700;--warn-soft:#fdf3e3;
+          --sh:0 30px 70px rgba(20,24,40,.14),0 2px 8px rgba(20,24,40,.08)}
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  a{color:inherit}
+  html[data-l="en"] [data-l="es"], html[data-l="es"] [data-l="en"]{display:none !important}
+  .wrap{width:min(1120px,100% - 32px);margin:0 auto}
+
+  /* ── top bar ── */
+  .top{position:sticky;top:0;z-index:20;backdrop-filter:blur(18px) saturate(1.5);-webkit-backdrop-filter:blur(18px) saturate(1.5);
+       background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+  .top .wrap{display:flex;align-items:center;gap:16px;height:60px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em;text-decoration:none}
+  .brand img{width:30px;height:30px;border-radius:8px}
+  .nav{display:flex;gap:22px;margin-left:auto;font-size:14px;color:var(--dim)}
+  .nav a{text-decoration:none}.nav a:hover{color:var(--text)}
+  .lang{display:flex;border:1px solid var(--line2);border-radius:99px;overflow:hidden;font-size:12px;font-weight:600}
+  .lang button{font:inherit;background:none;border:0;color:var(--dim);padding:5px 10px;cursor:pointer}
+  html[data-l="en"] .lang [data-set="en"], html[data-l="es"] .lang [data-set="es"]{background:var(--text);color:var(--bg)}
+  @media (max-width:760px){ .nav{display:none} .lang{margin-left:auto} }
+
+  /* ── buttons ── */
+  .btn{display:inline-flex;align-items:center;gap:10px;font-weight:650;font-size:15px;padding:13px 20px;border-radius:13px;
+       text-decoration:none;border:1px solid var(--line2);transition:transform .15s ease,filter .2s,background .2s;cursor:pointer;white-space:nowrap}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.go{border:0;color:#fff;background:var(--bsg);box-shadow:0 10px 30px color-mix(in srgb,var(--bs) 38%,transparent)}
+  .btn.go:hover{filter:brightness(1.06)}
+  .btn svg{width:18px;height:18px;flex:none}
+  .btn small{display:block;font-weight:500;font-size:11.5px;opacity:.8;margin-top:1px}
+  .btn .two{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
+
+  /* ── hero ── */
+  .hero{position:relative;padding:72px 0 40px;overflow:hidden}
+  .hero::before{content:'';position:absolute;inset:-20% -10% auto;height:640px;pointer-events:none;
+                background:radial-gradient(50% 50% at 30% 30%,color-mix(in srgb,var(--bs) 22%,transparent),transparent 70%),
+                           radial-gradient(40% 40% at 80% 20%,color-mix(in srgb,var(--bs2) 14%,transparent),transparent 70%)}
+  .hero .wrap{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center}
+  .kick{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+        padding:6px 12px;border-radius:99px;border:1px solid var(--line2);color:var(--dim)}
+  .kick i{width:8px;height:8px;border-radius:50%;background:var(--bsg)}
+  h1{font-size:clamp(38px,6vw,64px);line-height:1.02;letter-spacing:-.035em;margin:18px 0 18px;font-weight:800}
+  h1 em{font-style:normal;background:var(--bsg);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lead{font-size:clamp(17px,2vw,19px);color:var(--dim);max-width:34em;margin:0 0 28px}
+  .ctas{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+  .meta{margin-top:16px;font-size:13px;color:var(--faint);display:flex;flex-wrap:wrap;gap:6px 14px}
+  .meta b{color:var(--dim);font-weight:600}
+  .stage{position:relative;display:grid;place-items:center;min-height:420px}
+  @media (max-width:900px){ .hero .wrap{grid-template-columns:1fr} .stage{min-height:340px} }
+
+  /* the record */
+  .rec{position:relative;width:min(380px,80vw);aspect-ratio:1}
+  .disc{position:absolute;inset:11%;border-radius:50%;
+        background:radial-gradient(circle,var(--bs) 0 19%,#14161b 19.5% 21%,transparent 21.5%),
+                   repeating-radial-gradient(circle,#1d2027 0 3px,#262a33 3px 4px);
+        box-shadow:0 30px 60px rgba(0,0,0,.45),inset 0 0 0 1px rgba(255,255,255,.04);
+        animation:spin 4.2s cubic-bezier(.45,.05,.3,1) infinite}
+  .disc::before{content:'';position:absolute;inset:0;border-radius:50%;
+                background:conic-gradient(from 20deg,transparent 0 40deg,rgba(255,255,255,.10) 55deg,transparent 75deg 220deg,rgba(255,255,255,.07) 235deg,transparent 250deg)}
+  .disc::after{content:'';position:absolute;left:50%;top:50%;width:12px;height:12px;margin:-6px;border-radius:50%;background:#14161b}
+  .arrow{position:absolute;inset:0;overflow:visible}
+  .arrow path{fill:none;stroke:var(--text);stroke-width:7;stroke-linecap:round;stroke-dasharray:520;stroke-dashoffset:520;animation:draw 4.2s ease-in-out infinite}
+  .arrow polygon{fill:var(--text);opacity:0;animation:head 4.2s ease-in-out infinite}
+  @keyframes spin{0%{transform:rotate(0)}55%{transform:rotate(540deg)}72%{transform:rotate(330deg)}100%{transform:rotate(360deg)}}
+  @keyframes draw{0%,50%{stroke-dashoffset:520}72%,92%{stroke-dashoffset:0}100%{stroke-dashoffset:-520}}
+  @keyframes head{0%,66%{opacity:0}72%,92%{opacity:1}100%{opacity:0}}
+  .float{position:absolute;padding:8px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);box-shadow:var(--sh);
+         font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;animation:bob 6s ease-in-out infinite}
+  .float i{width:8px;height:8px;border-radius:50%}
+  .f1{left:2%;top:16%}.f2{right:0;top:38%;animation-delay:-2s}.f3{left:8%;bottom:10%;animation-delay:-4s}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+  /* ── strip ── */
+  .strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--bg2)}
+  .strip .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:22px 0}
+  .strip div{font-size:14px;color:var(--dim)} .strip b{display:block;color:var(--text);font-size:15px}
+  @media (max-width:760px){ .strip .wrap{grid-template-columns:1fr 1fr} }
+
+  /* ── features ── */
+  section.feat{padding:92px 0}
+  .feat .wrap{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+  .feat.flip .text{order:2}
+  .feat h2{font-size:clamp(28px,3.6vw,42px);line-height:1.08;letter-spacing:-.03em;margin:12px 0 14px;font-weight:780}
+  .feat p{color:var(--dim);font-size:16.5px;margin:0 0 12px;max-width:32em}
+  .feat p b{color:var(--text);font-weight:600}
+  .eyebrow{font-size:12px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;background:var(--bsg);
+           -webkit-background-clip:text;background-clip:text;color:transparent}
+  .scene{position:relative;min-height:380px;border-radius:24px;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line);
+         background:radial-gradient(120% 90% at 20% 10%,color-mix(in srgb,var(--bs) 16%,var(--bg2)) 0%,var(--bg2) 60%)}
+  .scene::after{content:'';position:absolute;inset:0;pointer-events:none;
+                background:radial-gradient(60% 50% at 85% 95%,color-mix(in srgb,var(--bs2) 12%,transparent),transparent)}
+  .scene > *{position:relative;z-index:1}
+  @media (max-width:900px){ .feat .wrap{grid-template-columns:1fr;gap:28px} .feat.flip .text{order:0} section.feat{padding:60px 0} .scene{min-height:320px} }
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s ease,transform .8s cubic-bezier(.2,.8,.2,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* scene pieces (the same family as the app's own tour) */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+  .chip{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--line2);color:var(--dim);background:var(--card)}
+  .on .chip.hot{animation:tagOn .4s both}
+  @keyframes tagOn{to{background:var(--bsg);border-color:transparent;color:#fff}}
+  @keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+  @keyframes drop{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bs) 45%,transparent)}50%{box-shadow:0 0 0 10px transparent}}
+  .scene:not(.on) *{animation-play-state:paused !important}
+
+  .inbox{width:min(420px,88%);display:flex;flex-direction:column;gap:16px}
+  .wave{position:relative;height:104px;display:flex;align-items:center;gap:2px;padding:0 6px;overflow:hidden}
+  .wave b{flex:1;border-radius:2px;background:linear-gradient(var(--w-high),var(--w-mid) 45%,var(--w-low));animation:bar 1.6s ease-in-out infinite alternate}
+  @keyframes bar{from{transform:scaleY(.82)}to{transform:scaleY(1)}}
+  .head{position:absolute;top:10px;bottom:10px;width:2px;background:var(--text);animation:play 6s linear infinite}
+  @keyframes play{from{left:3%}to{left:97%}}
+  .trk{display:flex;align-items:center;gap:12px;padding:12px 14px}
+  .trk .t{font-weight:650;font-size:14px}.trk small{display:block;color:var(--faint);font-size:12px}
+  .trk .k{margin-left:auto;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;background:#2a2244;color:#b9a6ff}
+  .stars{display:flex;gap:6px;font-size:20px;color:var(--line2)}
+  .on .stars span{animation:star .35s both}
+  @keyframes star{from{color:var(--line2);transform:scale(.7)}to{color:var(--bs);transform:scale(1)}}
+  .tags{display:flex;flex-wrap:wrap;gap:7px}
+
+  .safe{width:min(380px,88%);display:flex;flex-direction:column;gap:22px;align-items:center}
+  .pill{position:relative;height:32px;width:210px;border-radius:99px;font-size:12.5px;font-weight:600}
+  .pill span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px}
+  .pill i{width:8px;height:8px;border-radius:50%}
+  .pill .o i{background:#ef5a5a}.pill .c i{background:#34c759}
+  .pill .o{animation:off 6s infinite}.pill .c{animation:onn 6s infinite}
+  @keyframes off{0%,45%{opacity:1}50%,100%{opacity:0}}
+  @keyframes onn{0%,45%{opacity:0}50%,95%{opacity:1}100%{opacity:0}}
+  .lane{position:relative;width:340px;max-width:100%;height:120px}
+  .box{position:absolute;top:22px;width:92px;height:76px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+       padding-bottom:8px;font-size:11px;color:var(--faint);font-weight:600}
+  .box.q{left:58px}.box.db{right:0}
+  .box.db::before{content:'';position:absolute;top:12px;width:42px;height:34px;border-radius:50%/10px;background:linear-gradient(var(--bs),var(--bs2))}
+  .box.q::before{content:'⏸';position:absolute;top:16px;font-size:22px;color:var(--faint)}
+  .flow{position:absolute;left:0;top:44px;padding:4px 9px;border-radius:99px;font-size:11.5px;font-weight:600;background:var(--bsg);color:#fff;
+        animation:flow 6s infinite both}
+  .flow:nth-of-type(2){animation-delay:.35s}.flow:nth-of-type(3){animation-delay:.7s}
+  @keyframes flow{0%{opacity:0;transform:translateX(-30px)}8%{opacity:1}22%,46%{transform:translateX(78px)}62%,88%{transform:translateX(262px);opacity:1}96%,100%{transform:translateX(262px);opacity:0}}
+  .shield{font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:12px;background:var(--ok-soft);color:var(--ok)}
+
+  .health{display:flex;flex-direction:column;gap:22px;align-items:center;width:min(380px,90%)}
+  .dupes{position:relative;height:110px;width:340px;max-width:100%}
+  .dup{position:absolute;top:10px;width:150px;padding:10px 12px;font-size:12.5px}
+  .dup small{display:block;color:var(--faint);margin-top:3px}
+  .dup.a{left:0;animation:loser 4.5s infinite}.dup.b{right:0;animation:keeper 4.5s infinite}
+  @keyframes loser{0%,25%{transform:none;opacity:1}55%{transform:translateX(95px) scale(.9);opacity:0}100%{opacity:0;transform:translateX(95px)}}
+  @keyframes keeper{0%,25%{transform:none}55%,100%{transform:translateX(-95px)}}
+  .kept{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:99px;
+        background:var(--ok-soft);color:var(--ok);white-space:nowrap;animation:kept 4.5s infinite}
+  @keyframes kept{0%,50%{opacity:0;transform:translate(-50%,6px)}60%,95%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+  @property --p{syntax:'<number>';inherits:false;initial-value:0}
+  .rings{display:flex;gap:18px}
+  .ring{--p:0;width:88px;height:88px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(var(--bs) calc(var(--p)*1%),var(--field) 0)}
+  .on .ring{animation:fill 1.6s .3s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes fill{from{--p:0}}
+  .ring div{width:68px;height:68px;border-radius:50%;background:var(--bg2);display:grid;place-items:center;text-align:center;font-size:15px;font-weight:700;line-height:1.1}
+  .ring small{display:block;font-size:9.5px;font-weight:600;color:var(--faint)}
+
+  .pl{width:min(380px,90%);overflow:hidden}
+  .pl header{padding:12px 14px;font-size:13px;font-weight:700;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .pl header i{width:16px;height:16px;border-radius:50%;background:#1ed760}
+  .row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--line);font-size:13px}
+  .on .row{animation:up .4s both}
+  .row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .row em{font-style:normal;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px}
+  .on .row em{animation:pop .4s both}
+  .row em.y{background:var(--ok-soft);color:var(--ok)} .row em.n{background:var(--field);color:var(--faint)} .row em.m{background:var(--warn-soft);color:var(--warn)}
+  .make{margin:12px 14px;padding:9px 12px;border-radius:10px;text-align:center;font-size:13px;font-weight:600;color:#fff;background:var(--bsg)}
+  .on .make{animation:pop .4s 2.2s both,pulse 1.8s 2.8s infinite}
+
+  .sets{display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:center}
+  .wheel{position:relative;width:180px;height:180px;border-radius:50%;animation:turn 18s linear infinite;
+         background:conic-gradient(#e85d75,#f08a4b,#f4c04e,#c8d84e,#7fd06a,#4cc59a,#45b8d0,#4c8dff,#7a6cf0,#a65fe0,#d65cc0,#e85d75)}
+  .wheel::after{content:'';position:absolute;inset:36px;border-radius:50%;background:var(--bg2)}
+  .wheel i{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px;border-radius:50%;z-index:1;font-style:normal;font-size:10px;
+           font-weight:700;display:grid;place-items:center;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .wheel i.now{background:var(--card);color:var(--text);text-shadow:none;box-shadow:0 0 0 3px var(--bs),0 6px 14px rgba(0,0,0,.3);animation:pulse 1.8s infinite}
+  .wheel i.near{box-shadow:0 0 0 2px #fff}
+  .wheel i span{display:block;animation:turn 18s linear infinite reverse}
+  @keyframes turn{to{transform:rotate(360deg)}}
+  .chain{display:flex;flex-direction:column;gap:10px}
+  .step{display:flex;align-items:center;gap:10px;padding:9px 12px;font-size:12.5px;width:180px}
+  .on .step{animation:up .45s both}
+  .step b{font-size:11px;padding:2px 6px;border-radius:6px;background:#1d2a44;color:#9cc0ff}
+  .step small{margin-left:auto;color:var(--faint)}
+  .energy{width:180px;height:40px;overflow:visible}
+  .energy path{fill:none;stroke:var(--bs);stroke-width:3;stroke-linecap:round;stroke-dasharray:240;stroke-dashoffset:240}
+  .on .energy path{animation:line 1.6s 1.4s ease forwards}
+  @keyframes line{to{stroke-dashoffset:0}}
+
+  .teach{position:relative;width:360px;max-width:92%;height:270px}
+  .dot{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;transition:left 1.4s cubic-bezier(.3,.8,.2,1),top 1.4s cubic-bezier(.3,.8,.2,1),background .8s}
+  .axis{position:absolute;left:10px;right:10px;top:150px;height:1px;background:var(--line2);opacity:0;transition:opacity .6s 1s}
+  .axis.on{opacity:1}
+  .axis span{position:absolute;top:8px;font-size:11px;color:var(--faint)}
+  .score{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:13px;color:var(--dim)}
+  .score b{font-size:32px;display:block;color:var(--text);letter-spacing:-.02em}
+
+  .data{width:min(400px,90%);padding:18px}
+  .data h4{margin:0 0 10px;font-size:13px}
+  .bar{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--field);margin:6px 0 12px}
+  .bar span{height:100%;width:0;transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+  .on .bar span{width:var(--w)}
+  .acc{display:flex;gap:10px;align-items:center;font-size:13px;padding:7px 0;border-top:1px solid var(--line)}
+  .acc i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;font-weight:700;background:var(--ok-soft);color:var(--ok)}
+  .on .acc{animation:up .5s both}
+
+  .words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:min(420px,92%)}
+  .col{padding:11px 12px}
+  .col h4{margin:0 0 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .col div{display:flex;flex-wrap:wrap;gap:5px}
+  .col span{font-size:11.5px;padding:3px 8px;border-radius:99px;background:var(--field)}
+  .on .col span{animation:drop .4s both}
+
+  /* ── cloud teaser ── */
+  .cloud{padding:90px 0}
+  .cloudbox{position:relative;overflow:hidden;border-radius:28px;padding:48px;border:1px solid var(--line);
+            background:radial-gradient(100% 120% at 0% 0%,color-mix(in srgb,var(--bs) 22%,var(--bg2)),var(--bg2) 60%)}
+  .cloudbox h2{font-size:clamp(28px,3.6vw,40px);letter-spacing:-.03em;margin:10px 0 12px}
+  .cloudbox p{color:var(--dim);max-width:40em;margin:0 0 10px}
+  .soon{display:inline-block;font-size:12px;font-weight:700;padding:5px 10px;border-radius:99px;background:var(--bsg);color:#fff}
+  .phone{position:absolute;right:48px;top:50%;width:150px;height:300px;margin-top:-150px;border-radius:30px;border:6px solid var(--line2);
+         background:var(--card);box-shadow:var(--sh);display:flex;flex-direction:column;gap:8px;padding:28px 12px 12px;animation:bob 6s ease-in-out infinite}
+  .phone b{height:10px;border-radius:5px;background:var(--field)} .phone b.h{background:var(--bsg);width:60%}
+  @media (max-width:900px){ .phone{display:none} .cloudbox{padding:30px} }
+
+  /* ── install ── */
+  .install{padding:80px 0;border-top:1px solid var(--line)}
+  .install h2,.faq h2{font-size:clamp(28px,3.4vw,38px);letter-spacing:-.03em;margin:0 0 26px}
+  .os{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .os .card{padding:26px}
+  .os h3{margin:0 0 12px;display:flex;align-items:center;gap:10px;font-size:19px}
+  .os ol{margin:0 0 18px;padding-left:20px;color:var(--dim)} .os li{margin:6px 0}
+  .os code{font-size:13px;background:var(--field);padding:2px 6px;border-radius:6px;color:var(--text)}
+  @media (max-width:760px){ .os{grid-template-columns:1fr} }
+
+  .faq{padding:70px 0 90px}
+  details{border-bottom:1px solid var(--line);padding:16px 0}
+  summary{cursor:pointer;font-weight:650;font-size:16.5px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+  summary::after{content:'+';color:var(--faint);font-size:20px;line-height:1}
+  details[open] summary::after{content:'–'}
+  details p{color:var(--dim);margin:10px 0 0;max-width:46em}
+
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:13px}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between}
+  footer a{color:var(--dim)}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation-duration:.001s !important;animation-iteration-count:1 !important;transition:none !important}
+    .reveal{opacity:1;transform:none}
+    .arrow path{stroke-dashoffset:0}.arrow polygon{opacity:1}
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#"><img src="icon.png" alt="">Backspins</a>
+    <nav class="nav">
+      <a href="#features"><span data-l="en">Features</span><span data-l="es">Funciones</span></a>
+      <a href="#install"><span data-l="en">Install</span><span data-l="es">Instalar</span></a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/eruizimade/backspins">GitHub</a>
+    </nav>
+    <div class="lang"><button data-set="en" type="button">EN</button><button data-set="es" type="button">ES</button></div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="kick"><i></i><span data-l="en">For rekordbox DJs · free</span><span data-l="es">Para DJs de rekordbox · gratis</span></span>
+      <h1>
+        <span data-l="en">Your library, <em>in shape.</em><br>Your sets, ready.</span>
+        <span data-l="es">Tu biblioteca, <em>en forma.</em><br>Tus sets, listos.</span>
+      </h1>
+      <p class="lead">
+        <span data-l="en">Backspins tags while you listen, cleans duplicates, tells you which CDJs your music plays on and builds sets that flow — then writes it all back into rekordbox, safely.</span>
+        <span data-l="es">Backspins etiqueta mientras escuchas, limpia duplicados, te dice en qué CDJs suena tu música y monta sets que fluyen — y lo escribe todo en rekordbox, con seguridad.</span>
+      </p>
+      <div class="ctas" id="ctas">
+        <a class="btn go" id="dlMain" href="https://github.com/eruizimade/backspins/releases/latest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 21h14"/></svg>
+          <span class="two"><span id="dlMainT"><span data-l="en">Download</span><span data-l="es">Descargar</span></span><small id="dlMainS">macOS · Windows</small></span>
+        </a>
+        <a class="btn" id="dlAlt" href="https://github.com/eruizimade/backspins/releases/latest"><span id="dlAltT">GitHub</span></a>
+      </div>
+      <div class="meta">
+        <span><b id="ver">v0.1</b> · <span id="verDate"></span></span>
+        <span data-l="en">Windows 10/11 · macOS 13+ (Apple Silicon)</span><span data-l="es">Windows 10/11 · macOS 13+ (Apple Silicon)</span>
+        <span data-l="en">Open source · GPL-3.0</span><span data-l="es">Código abierto · GPL-3.0</span>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="rec">
+        <div class="disc"></div>
+        <svg class="arrow" viewBox="0 0 250 250"><path d="M181 222 A112 112 0 1 0 19.8 163.3"/><polygon points="27,184 7,167 32,158"/></svg>
+      </div>
+      <div class="float card f1"><i style="background:#34c759"></i><span data-l="en">98% plays on CDJ-3000</span><span data-l="es">98% suena en CDJ-3000</span></div>
+      <div class="float card f2"><i style="background:var(--bs)"></i><span data-l="en">12 duplicates merged</span><span data-l="es">12 duplicados fusionados</span></div>
+      <div class="float card f3"><i style="background:#4c8dff"></i>8A → 9A · 124 BPM</div>
+    </div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <div><b data-l="en">Runs on your computer</b><b data-l="es">Funciona en tu ordenador</b><span data-l="en">Your music never leaves it.</span><span data-l="es">Tu música nunca sale de él.</span></div>
+    <div><b data-l="en">rekordbox 6 & 7</b><b data-l="es">rekordbox 6 y 7</b><span data-l="en">Reads your real library.</span><span data-l="es">Lee tu biblioteca real.</span></div>
+    <div><b data-l="en">Backups first</b><b data-l="es">Backup primero</b><span data-l="en">Before every single write.</span><span data-l="es">Antes de cada escritura.</span></div>
+    <div><b data-l="en">English · Español</b><b data-l="es">English · Español</b><span data-l="en">Switch any time.</span><span data-l="es">Cambia cuando quieras.</span></div>
+  </div>
+</div>
+
+<main id="features">
+
+<section class="feat">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow">Inbox</span>
+      <h2><span data-l="en">Tag while you listen</span><span data-l="es">Etiqueta mientras escuchas</span></h2>
+      <p><span data-l="en">New music lands in your Inbox. Play it with the <b>three-band waveform a CDJ shows</b>, then rate it, set its energy and tick its MyTags — one key at a time. Done? The next one is already playing.</span>
+         <span data-l="es">La música nueva llega a tu Entrada. Escúchala con la <b>onda de tres bandas que muestra un CDJ</b>, puntúala, ponle energía y marca sus MyTags — tecla a tecla. ¿Hecho? La siguiente ya está sonando.</span></p>
+      <p><span data-l="en">On a Mac, a menu bar icon lets you tag with any other window in front.</span><span data-l="es">En Mac, un icono en la barra de menú te deja etiquetar con cualquier otra ventana delante.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="inbox"></div>
+  </div>
+</section>
+
+<section class="feat flip">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow" data-l="en">Safe by design</span><span class="eyebrow" data-l="es">Seguro por diseño</span>
+      <h2><span data-l="en">rekordbox stays in charge</span><span data-l="es">rekordbox sigue mandando</span></h2>
+      <p><span data-l="en">Backspins reads your library from a copy, so rekordbox is never locked. While rekordbox is <b>open</b>, your edits wait; the moment it <b>closes</b>, they go in — after a backup.</span>
+         <span data-l="es">Backspins lee tu biblioteca desde una copia, así que rekordbox nunca se bloquea. Mientras rekordbox está <b>abierto</b>, tus cambios esperan; en cuanto se <b>cierra</b>, entran — después de un backup.</span></p>
+      <p><span data-l="en">Nothing is ever really deleted: files go to the bin.</span><span data-l="es">Nunca se borra nada de verdad: los archivos van a la papelera.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="safe"></div>
+  </div>
+</section>
+
+<section class="feat">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow" data-l="en">Health</span><span class="eyebrow" data-l="es">Revisión</span>
+      <h2><span data-l="en">A library in good shape</span><span data-l="es">Una biblioteca en forma</span></h2>
+      <p><span data-l="en"><b>Duplicates</b>: it compares the real quality and length, keeps the better copy and merges your cues, tags and playlists into it.</span>
+         <span data-l="es"><b>Duplicados</b>: compara la calidad y duración reales, se queda con la mejor copia y le pasa tus cues, tags y playlists.</span></p>
+      <p><span data-l="en"><b>CDJ compatibility</b>: which players your library works on — and exactly which files hold you back. Plus low bitrates, shop branding in your tags and missing artwork.</span>
+         <span data-l="es"><b>Compatibilidad CDJ</b>: en qué equipos funciona tu biblioteca — y qué archivos exactamente te frenan. Además: bitrates bajos, marcas de tiendas en tus tags y portadas que faltan.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="health"></div>
+  </div>
+</section>
+
+<section class="feat flip">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow" data-l="en">Find</span><span class="eyebrow" data-l="es">Buscar</span>
+      <h2><span data-l="en">Check any playlist</span><span data-l="es">Comprueba cualquier playlist</span></h2>
+      <p><span data-l="en">Paste a Spotify or SoundCloud link: see what you already own, what is missing and what is almost a match. Pair songs by hand, then turn it into a rekordbox playlist — and update it later.</span>
+         <span data-l="es">Pega un enlace de Spotify o SoundCloud: mira qué tienes ya, qué falta y qué casi coincide. Empareja canciones a mano y conviértela en una playlist de rekordbox — y actualízala después.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="find"></div>
+  </div>
+</section>
+
+<section class="feat">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow">Sets</span>
+      <h2><span data-l="en">Build a set that flows</span><span data-l="es">Monta un set que fluya</span></h2>
+      <p><span data-l="en">Pick a kind of night and an opener. Backspins suggests what can follow by <b>key</b>, <b>tempo</b>, <b>mood</b> and what you have <b>actually mixed</b> after it before — then saves the set to rekordbox as a playlist.</span>
+         <span data-l="es">Elige un tipo de noche y un tema para abrir. Backspins sugiere qué puede seguir por <b>tonalidad</b>, <b>tempo</b>, <b>mood</b> y lo que <b>has mezclado de verdad</b> antes — y guarda el set en rekordbox como playlist.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="sets"></div>
+  </div>
+</section>
+
+<section class="feat flip">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow" data-l="en">Teach</span><span class="eyebrow" data-l="es">Enseñar</span>
+      <h2><span data-l="en">Teach it your ear</span><span data-l="es">Enséñale tu oído</span></h2>
+      <p><span data-l="en">Ask a question — <b>"is this Acid?"</b> — and answer a few. It listens to every track (notes, chords, timbre, groove), learns from your answers, tells you how often it is right, and ranks the whole library for you to confirm.</span>
+         <span data-l="es">Haz una pregunta — <b>"¿esto es Acid?"</b> — y responde unas cuantas. Escucha cada pista (notas, acordes, timbre, groove), aprende de tus respuestas, te dice cuánto acierta y ordena toda la biblioteca para que confirmes.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="teach"></div>
+  </div>
+</section>
+
+<section class="feat">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow" data-l="en">Your words</span><span class="eyebrow" data-l="es">Tus palabras</span>
+      <h2><span data-l="en">It speaks your vocabulary</span><span data-l="es">Habla tu vocabulario</span></h2>
+      <p><span data-l="en">Backspins works out your MyTag groups from what is in them — the kind of night, the mood, the running order — whatever you call them.</span>
+         <span data-l="es">Backspins deduce tus grupos de MyTag por lo que contienen — el tipo de noche, el mood, el orden de la noche — los llames como los llames.</span></p>
+      <p><span data-l="en">No MyTags yet? Start from a <b>starter vocabulary</b>: 25 tags distilled from a year of hand-tagging.</span>
+         <span data-l="es">¿Aún sin MyTags? Empieza con un <b>vocabulario inicial</b>: 25 tags destilados de un año etiquetando a mano.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="words"></div>
+  </div>
+</section>
+
+<section class="feat flip">
+  <div class="wrap">
+    <div class="text reveal">
+      <span class="eyebrow" data-l="en">Your data</span><span class="eyebrow" data-l="es">Tus datos</span>
+      <h2><span data-l="en">Nothing hidden</span><span data-l="es">Nada escondido</span></h2>
+      <p><span data-l="en">Every byte Backspins keeps, where it lives, and a size limit for backups you choose. It checks it can actually read your library and every music file — and if your system blocks a folder, tells you exactly which setting to change.</span>
+         <span data-l="es">Cada byte que guarda Backspins, dónde está, y un límite para los backups que eliges tú. Comprueba que puede leer tu biblioteca y cada archivo de música — y si el sistema bloquea una carpeta, te dice exactamente qué ajuste tocar.</span></p>
+    </div>
+    <div class="scene reveal" data-scene="data"></div>
+  </div>
+</section>
+
+</main>
+
+<section class="cloud">
+  <div class="wrap">
+    <div class="cloudbox reveal">
+      <span class="soon"><span data-l="en">Coming soon</span><span data-l="es">Próximamente</span></span>
+      <h2>Backspins Cloud</h2>
+      <p><span data-l="en">An optional paid service for when you are away from the desk: a <b>hosted backup of your music</b>, and your library <b>on your phone</b> — tag, organise and listen with your computer switched off. Every change goes into rekordbox the next time Backspins runs.</span>
+         <span data-l="es">Un servicio opcional de pago para cuando estás lejos del ordenador: un <b>backup de tu música en la nube</b>, y tu biblioteca <b>en el móvil</b> — etiqueta, organiza y escucha con el ordenador apagado. Cada cambio entra en rekordbox la próxima vez que abras Backspins.</span></p>
+      <p><span data-l="en">The app stays free.</span><span data-l="es">La app sigue siendo gratis.</span></p>
+      <div class="phone"><b class="h"></b><b></b><b></b><b style="width:70%"></b><b></b><b style="width:50%"></b></div>
+    </div>
+  </div>
+</section>
+
+<section class="install" id="install">
+  <div class="wrap">
+    <h2 class="reveal"><span data-l="en">Install in a minute</span><span data-l="es">Instálalo en un minuto</span></h2>
+    <div class="os">
+      <div class="card reveal">
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.5 10.5 4.5v7H3v-6Zm0 13 7.5 1v-7H3v6Zm8.5 1.1L21 21v-8.5h-9.5v7.1Zm0-15.2v7.1H21V3l-9.5 1.4Z"/></svg> Windows</h3>
+        <ol>
+          <li><span data-l="en">Download <code>Backspins-windows.zip</code> and <b>extract all</b>.</span><span data-l="es">Descarga <code>Backspins-windows.zip</code> y <b>extráelo entero</b>.</span></li>
+          <li><span data-l="en">Open <code>Backspins.exe</code>. If Windows says it protected your PC: <b>More info → Run anyway</b> (the app is not signed yet).</span><span data-l="es">Abre <code>Backspins.exe</code>. Si Windows dice que protegió tu PC: <b>Más información → Ejecutar de todas formas</b> (la app aún no está firmada).</span></li>
+          <li><span data-l="en">For converting files: <code>winget install ffmpeg</code>.</span><span data-l="es">Para convertir archivos: <code>winget install ffmpeg</code>.</span></li>
+        </ol>
+        <a class="btn go" href="https://github.com/eruizimade/backspins/releases/latest/download/Backspins-windows.zip">
+          <span data-l="en">Download for Windows</span><span data-l="es">Descargar para Windows</span></a>
+      </div>
+      <div class="card reveal">
+        <h3><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.7 1.3 10.2.8 1.2 1.8 2.6 3.1 2.5 1.2 0 1.7-.8 3.2-.8s1.9.8 3.2.8c1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8-.1 0-2.5-1-2.6-3.9ZM13.9 4.9c.7-.8 1.1-1.9 1-3-1 0-2.1.6-2.8 1.4-.6.7-1.2 1.8-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg> macOS</h3>
+        <ol>
+          <li><span data-l="en">Download <code>Backspins-macos-arm64.zip</code>, open it and drag <b>Backspins</b> to <b>Applications</b>.</span><span data-l="es">Descarga <code>Backspins-macos-arm64.zip</code>, ábrelo y arrastra <b>Backspins</b> a <b>Aplicaciones</b>.</span></li>
+          <li><span data-l="en">The first time: <b>right-click → Open</b> (the app is not notarised yet). Run it from Applications so the permissions you give it stick.</span><span data-l="es">La primera vez: <b>clic derecho → Abrir</b> (la app aún no está notarizada). Ábrela desde Aplicaciones para que los permisos que le des se mantengan.</span></li>
+          <li><span data-l="en">For converting files: <code>brew install ffmpeg</code> (optional).</span><span data-l="es">Para convertir archivos: <code>brew install ffmpeg</code> (opcional).</span></li>
+        </ol>
+        <a class="btn go" href="https://github.com/eruizimade/backspins/releases/latest/download/Backspins-macos-arm64.zip">
+          <span data-l="en">Download for macOS</span><span data-l="es">Descargar para macOS</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <div class="wrap">
+    <h2 class="reveal"><span data-l="en">Questions</span><span data-l="es">Preguntas</span></h2>
+    <details class="reveal"><summary><span data-l="en">Will it mess up my rekordbox library?</span><span data-l="es">¿Me puede estropear la biblioteca de rekordbox?</span></summary>
+      <p><span data-l="en">It reads from a copy, writes only while rekordbox is closed, and backs up the whole library before every write. Edits you make in rekordbox in the meantime always win.</span>
+         <span data-l="es">Lee desde una copia, solo escribe con rekordbox cerrado y hace backup de toda la biblioteca antes de cada escritura. Lo que cambies en rekordbox mientras tanto siempre gana.</span></p></details>
+    <details class="reveal"><summary><span data-l="en">Does my music get uploaded anywhere?</span><span data-l="es">¿Se sube mi música a algún sitio?</span></summary>
+      <p><span data-l="en">No. Everything runs on your computer. The app only answers its own window — other websites cannot reach it.</span>
+         <span data-l="es">No. Todo funciona en tu ordenador. La app solo responde a su propia ventana — otras webs no pueden llegar a ella.</span></p></details>
+    <details class="reveal"><summary><span data-l="en">Is it really free?</span><span data-l="es">¿De verdad es gratis?</span></summary>
+      <p><span data-l="en">Yes, and open source (GPL-3.0). Backspins Cloud — the phone and the hosted backup — will be the optional paid part.</span>
+         <span data-l="es">Sí, y de código abierto (GPL-3.0). Backspins Cloud — el móvil y el backup en la nube — será la parte opcional de pago.</span></p></details>
+    <details class="reveal"><summary><span data-l="en">Which rekordbox versions?</span><span data-l="es">¿Qué versiones de rekordbox?</span></summary>
+      <p><span data-l="en">rekordbox 6 and 7, on Windows and macOS. Your library can live on an external drive.</span>
+         <span data-l="es">rekordbox 6 y 7, en Windows y macOS. Tu biblioteca puede estar en un disco externo.</span></p></details>
+    <details class="reveal"><summary><span data-l="en">Is this made by Pioneer DJ / AlphaTheta?</span><span data-l="es">¿Lo hace Pioneer DJ / AlphaTheta?</span></summary>
+      <p><span data-l="en">No. Backspins is an independent project, not affiliated with or endorsed by AlphaTheta or Pioneer DJ. "rekordbox" is their trademark.</span>
+         <span data-l="es">No. Backspins es un proyecto independiente, sin relación ni respaldo de AlphaTheta o Pioneer DJ. "rekordbox" es marca suya.</span></p></details>
+    <details class="reveal"><summary><span data-l="en">Found a bug?</span><span data-l="es">¿Has encontrado un fallo?</span></summary>
+      <p><span data-l="en">Open an issue on <a href="https://github.com/eruizimade/backspins/issues">GitHub</a>. Security problems: use "Report a vulnerability" on the repository's Security tab.</span>
+         <span data-l="es">Abre un issue en <a href="https://github.com/eruizimade/backspins/issues">GitHub</a>. Problemas de seguridad: usa "Report a vulnerability" en la pestaña Security del repositorio.</span></p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>Backspins · GPL-3.0 · <a href="https://github.com/eruizimade/backspins">GitHub</a> · <a href="https://github.com/eruizimade/backspins/releases">Releases</a></span>
+    <span data-l="en">Not affiliated with AlphaTheta or Pioneer DJ.</span><span data-l="es">Sin relación con AlphaTheta ni Pioneer DJ.</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var REPO = 'eruizimade/backspins';
+  var DL = 'https://github.com/' + REPO + '/releases/latest/download/';
+  var lang = document.documentElement.getAttribute('data-l');
+
+  // ── language switch ──
+  document.querySelectorAll('.lang button').forEach(function(b){
+    b.addEventListener('click', function(){
+      lang = b.dataset.set;
+      document.documentElement.setAttribute('data-l', lang);
+      document.documentElement.lang = lang;
+      try { localStorage.setItem('bs_site_lang', lang); } catch (e) {}
+      paintDownload();
+    });
+  });
+
+  // ── the main button downloads for THIS computer ──
+  var ua = navigator.userAgent || '';
+  var os = /Windows/i.test(ua) ? 'win' : /Mac/i.test(ua) && !/iPhone|iPad/i.test(ua) ? 'mac' : null;
+  function paintDownload(){
+    var es = lang === 'es';
+    var main = document.getElementById('dlMain'), alt = document.getElementById('dlAlt');
+    if (os === 'win') {
+      main.href = DL + 'Backspins-windows.zip';
+      document.getElementById('dlMainT').textContent = es ? 'Descargar para Windows' : 'Download for Windows';
+      document.getElementById('dlMainS').textContent = 'Windows 10 / 11 · 64-bit';
+      alt.href = DL + 'Backspins-macos-arm64.zip';
+      document.getElementById('dlAltT').textContent = es ? 'macOS' : 'macOS';
+    } else if (os === 'mac') {
+      main.href = DL + 'Backspins-macos-arm64.zip';
+      document.getElementById('dlMainT').textContent = es ? 'Descargar para macOS' : 'Download for macOS';
+      document.getElementById('dlMainS').textContent = 'Apple Silicon · macOS 13+';
+      alt.href = DL + 'Backspins-windows.zip';
+      document.getElementById('dlAltT').textContent = 'Windows';
+    } else {
+      document.getElementById('dlMainT').textContent = es ? 'Descargar' : 'Download';
+      alt.href = 'https://github.com/' + REPO;
+      document.getElementById('dlAltT').textContent = 'GitHub';
+    }
+  }
+  paintDownload();
+
+  // ── the latest version, from GitHub ──
+  fetch('https://api.github.com/repos/' + REPO + '/releases/latest').then(function(r){ return r.json(); }).then(function(j){
+    if (!j || !j.tag_name) return;
+    document.getElementById('ver').textContent = j.tag_name;
+    var d = new Date(j.published_at);
+    document.getElementById('verDate').textContent = d.toLocaleDateString(lang === 'es' ? 'es-ES' : 'en-GB', {day: 'numeric', month: 'short', year: 'numeric'});
+  }).catch(function(){});
+
+  // ── scenes ──
+  function seeded(i){ var x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
+  function T(en, es){ return '<span data-l="en">' + en + '</span><span data-l="es">' + es + '</span>'; }
+  var SCENES = {
+    inbox: function(){
+      var bars = '';
+      for (var i = 0; i < 70; i++) {
+        var h = 18 + Math.round(70 * Math.abs(Math.sin(i / 5.3) * 0.6 + seeded(i) * 0.4));
+        bars += '<b style="height:' + h + '%;animation-delay:' + (-seeded(i + 9) * 1.6).toFixed(2) + 's"></b>';
+      }
+      var stars = '';
+      for (var s = 0; s < 5; s++) stars += s < 4 ? '<span style="animation-delay:' + (0.8 + s * 0.18) + 's">★</span>' : '<span>★</span>';
+      var tags = ['Dark', 'Acid', 'Hard', 'Groovy', 'Peak', 'Rave', 'Euphoric'], on = {0: 1, 1: 1, 4: 1, 5: 1}, t = '';
+      tags.forEach(function(n, k){ t += '<span class="chip' + (on[k] ? ' hot' : '') + '" style="animation-delay:' + (1.9 + k * 0.25) + 's">' + n + '</span>'; });
+      return '<div class="inbox"><div class="card trk"><div><div class="t">Midnight Drive</div><small>Nova Lane · 124 BPM</small></div><span class="k">8A</span></div>'
+        + '<div class="card wave">' + bars + '<span class="head"></span></div>'
+        + '<div class="stars">' + stars + '</div><div class="tags">' + t + '</div></div>';
+    },
+    safe: function(){
+      return '<div class="safe"><div class="pill card"><span class="o"><i></i>' + T('rekordbox is open', 'rekordbox está abierto') + '</span>'
+        + '<span class="c"><i></i>' + T('rekordbox is closed', 'rekordbox está cerrado') + '</span></div>'
+        + '<div class="lane"><div class="box card q">' + T('queue', 'cola') + '</div><div class="box card db">' + T('library', 'biblioteca') + '</div>'
+        + '<span class="flow">Dark</span><span class="flow">★★★★</span><span class="flow">Peak</span></div>'
+        + '<div class="shield">✓ ' + T('Backed up first', 'Backup hecho antes') + '</div></div>';
+    },
+    health: function(){
+      return '<div class="health"><div class="dupes"><div class="card dup a">Midnight Drive<small>MP3 · 128 kbps</small></div>'
+        + '<div class="card dup b">Midnight Drive<small>AIFF · 1411 kbps</small></div>'
+        + '<span class="kept">✓ ' + T('kept the AIFF · cues and tags merged', 'se queda el AIFF · cues y tags fusionados') + '</span></div>'
+        + '<div class="rings"><div class="ring" style="--p:98"><div>98%<small>CDJ-3000</small></div></div>'
+        + '<div class="ring" style="--p:91;animation-delay:.5s"><div>91%<small>NXS2</small></div></div>'
+        + '<div class="ring" style="--p:74;animation-delay:.7s"><div>74%<small>CDJ-900</small></div></div></div></div>';
+    },
+    find: function(){
+      var rows = [['Night Drive', 'y'], ['Lost in Tokyo', 'm'], ['Paradise Garage', 'y'], ['Running Water', 'n'], ['Sunday Morning', 'y'], ['Afterglow', 'y']], h = '';
+      var lab = {y: T('In library', 'La tienes'), n: T('Missing', 'Falta'), m: '≈ 92%'};
+      rows.forEach(function(r, i){
+        h += '<div class="row" style="animation-delay:' + (0.15 + i * 0.12) + 's"><span>' + r[0] + '</span><em class="' + r[1]
+          + '" style="animation-delay:' + (0.9 + i * 0.18) + 's">' + lab[r[1]] + '</em></div>';
+      });
+      return '<div class="card pl"><header><i></i>Sunset rooftop · 6</header>' + h + '<div class="make">' + T('Make a rekordbox playlist', 'Crear playlist en rekordbox') + '</div></div>';
+    },
+    sets: function(){
+      var marks = '';
+      for (var n = 1; n <= 12; n++) {
+        var a = (-90 + (n % 12) * 30) * Math.PI / 180;
+        marks += '<i class="' + (n === 8 ? 'now' : (n === 7 || n === 9 ? 'near' : '')) + '" style="transform:translate('
+          + (Math.cos(a) * 72).toFixed(1) + 'px,' + (Math.sin(a) * 72).toFixed(1) + 'px)"><span>' + n + '</span></i>';
+      }
+      var keys = ['8A', '9A', '9B', '10B'], names = ['Opener', 'Rising', 'Lift', 'Peak'], bpm = [122, 123, 124, 126], st = '';
+      keys.forEach(function(k, i){ st += '<div class="card step" style="animation-delay:' + (0.3 + i * 0.3) + 's"><b>' + k + '</b>' + names[i] + '<small>' + bpm[i] + '</small></div>'; });
+      return '<div class="sets"><div class="wheel">' + marks + '</div><div class="chain">' + st
+        + '<svg class="energy" viewBox="0 0 180 40"><path d="M2 34 C 40 30, 60 26, 90 20 S 150 6, 178 4"/></svg></div></div>';
+    },
+    teach: function(box){
+      box.innerHTML = '<div class="teach"><div class="axis"><span style="left:0">' + T('less', 'menos') + '</span><span style="right:0">' + T('more Acid', 'más Acid') + '</span></div>'
+        + '<div class="score"><b>0%</b>' + T('right on tracks it never saw', 'de acierto en pistas que nunca vio') + '</div></div>';
+      var stage = box.firstChild, dots = [];
+      for (var i = 0; i < 26; i++) {
+        var d = document.createElement('i'); d.className = 'dot';
+        d.style.left = (20 + seeded(i) * 320) + 'px'; d.style.top = (10 + seeded(i + 40) * 120) + 'px';
+        d.style.background = 'var(--line2)';
+        stage.appendChild(d); dots.push({el: d, s: seeded(i + 80)});
+      }
+      setTimeout(function(){
+        stage.querySelector('.axis').classList.add('on');
+        dots.sort(function(a, b){ return a.s - b.s; }).forEach(function(o, k){
+          o.el.style.left = (20 + k * 12.4) + 'px'; o.el.style.top = (134 - o.s * 40) + 'px';
+          o.el.style.background = 'color-mix(in srgb, #ff6a2b ' + Math.round(o.s * 100) + '%, var(--line2))';
+        });
+        var b = stage.querySelector('.score b'), n = 0;
+        var tick = setInterval(function(){ n += 3; if (n >= 87) { n = 87; clearInterval(tick); } b.textContent = n + '%'; }, 40);
+      }, 600);
+      return null;
+    },
+    words: function(){
+      var cols = [['Type of set', ['Rave', 'After', 'Sunset', 'Bar', 'Party', 'Family']],
+                  ['Mood', ['Dark', 'Hard', 'Acid', 'Psychedelic', 'Tribal', 'Groovy', 'Happy', 'Euphoric', 'Emotional', 'Chill']],
+                  ['Timing', ['Opener', 'Warm-up', 'Middle', 'Peak', 'Closer']], ['Misc', ['Anthem', 'Tool']]], h = '', n = 0;
+      cols.forEach(function(c){
+        h += '<div class="card col"><h4>' + c[0] + '</h4><div>';
+        c[1].forEach(function(w){ h += '<span style="animation-delay:' + (0.2 + (n++) * 0.07).toFixed(2) + 's">' + w + '</span>'; });
+        h += '</div></div>';
+      });
+      return '<div class="words">' + h + '</div>';
+    },
+    data: function(){
+      return '<div class="card data"><h4>' + T('Storage', 'Almacenamiento') + '</h4>'
+        + '<div class="bar"><span style="--w:52%;background:#ff6a2b"></span><span style="--w:8%;background:#ffb347"></span>'
+        + '<span style="--w:6%;background:#4c8dff"></span><span style="--w:4%;background:#34c759"></span></div>'
+        + '<div style="font-size:12.5px;color:var(--dim);margin-bottom:12px">' + T('Library backups may use', 'Los backups pueden usar') + ' <b style="color:var(--text)">2 GB</b></div>'
+        + '<h4>' + T('Access', 'Acceso') + '</h4>'
+        + '<div class="acc" style="animation-delay:.4s"><i>✓</i>' + T('rekordbox library — 2,651 tracks', 'Biblioteca de rekordbox — 2.651 pistas') + '</div>'
+        + '<div class="acc" style="animation-delay:.7s"><i>✓</i>' + T('All 2,588 music files can be read', 'Se pueden leer los 2.588 archivos') + '</div></div>';
+    }
+  };
+
+  function play(el){
+    var make = SCENES[el.dataset.scene];
+    if (!make) return;
+    el.classList.remove('on');
+    var html = make(el);
+    if (html !== null) el.innerHTML = html;
+    void el.offsetWidth;                 // restart every animation
+    el.classList.add('on');
+  }
+
+  var io = 'IntersectionObserver' in window ? new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.target.classList.contains('scene')) {
+        if (e.isIntersecting) e.target.classList.add('in');
+        if (e.isIntersecting && !e.target.classList.contains('on')) play(e.target);
+        else if (!e.isIntersecting) e.target.classList.remove('on');
+      } else if (e.isIntersecting) {
+        e.target.classList.add('in');
+      }
+    });
+  }, {threshold: 0.25}) : null;
+  document.querySelectorAll('.reveal').forEach(function(el){
+    if (io) io.observe(el); else { el.classList.add('in'); if (el.classList.contains('scene')) play(el); }
+  });
+})();
+</script>
+</body>
+</html>

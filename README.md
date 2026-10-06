@@ -2,6 +2,8 @@
 
 # Backspins
 
+**[eruizimade.github.io/backspins](https://eruizimade.github.io/backspins/)** · [Download](https://github.com/eruizimade/backspins/releases/latest)
+
 **Look after your rekordbox library, and prepare your sets faster than rekordbox lets you.**
 
 Backspins is a desktop app for DJs who use rekordbox 6 or 7. It reads your
