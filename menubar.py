@@ -60,7 +60,7 @@ LOCK_PORT = int(os.environ.get('TOOLKIT_MENUBAR_LOCK', '47653'))   # override on
 # the ten-odd taps per track go, started below the fold on every track.
 POPOVER_SIZE = (380, 700)
 
-# The icon is Backspin's mark: a record with an arrow taking it backwards. It
+# The icon is Backspins's mark: a record with an arrow taking it backwards. It
 # is DRAWN rather than shipped as a .png: bezier paths are sharp at any scale,
 # there is no asset to keep in step with the code, and as a template image
 # macOS tints it itself — dark menu bar, light menu bar, and inverted while
@@ -163,8 +163,8 @@ def alive(port):
 
 
 # The Mac app (app/main.swift). Overridable only to test against a copy.
-# The packaged app (backspin.spec) has the same id.
-APP_IDS = ('app.backspin.mac',)
+# The packaged app (backspins.spec) has the same id.
+APP_IDS = ('app.backspins.mac', 'app.backspin.mac')   # 0.1.x had the second
 if os.environ.get('TOOLKIT_APP_ID'):
     APP_IDS = (os.environ['TOOLKIT_APP_ID'],)
 
@@ -299,14 +299,14 @@ class Controller(NSObject):
 
         self.menu = NSMenu.alloc().init()
         opener = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            'Open Backspin', 'openApp:', '')
+            'Open Backspins', 'openApp:', '')
         opener.setTarget_(self)
         self.menu.addItem_(opener)
         self.menu.addItem_(NSMenuItem.separatorItem())
         # The whole thing, not just this icon: an icon quitting on its own left
         # the app and the server running with nothing to drive them from.
         quitter = NSMenuItem.alloc().initWithTitle_action_keyEquivalent_(
-            'Quit Backspin', 'quitAll:', 'q')
+            'Quit Backspins', 'quitAll:', 'q')
         quitter.setTarget_(self)
         self.menu.addItem_(quitter)
         self.loaded = None          # the port the page in the popover came from
@@ -374,7 +374,7 @@ class Controller(NSObject):
         # Mac app if it is installed, else Chrome. The toolkit window is the
         # player, and opening a second one somewhere else gives you two players
         # quietly fighting over the same queue.
-        for cmd in (['open', '-a', 'Backspin'], ['open', '-a', 'Rekordbox Toolkit'],
+        for cmd in (['open', '-a', 'Backspins'], ['open', '-a', 'Rekordbox Toolkit'],
                     ['open', '-a', 'Google Chrome', url]):
             try:
                 subprocess.run(cmd, check=True, capture_output=True, timeout=10)

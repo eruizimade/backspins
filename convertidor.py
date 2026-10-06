@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backspin — a local server with a web UI (convertidor.html).
+"""Backspins — a local server with a web UI (convertidor.html).
 
 The Convert tab scans a folder (recursively) for music files, renames them to
 "Title - Artist" ONLY when both tags exist, converts FLAC to AIFF keeping tags
@@ -99,7 +99,7 @@ from mutagen import id3 as id3f
 from mutagen.aiff import AIFF
 from mutagen.flac import FLAC
 
-DEFAULT_OUTPUT = os.path.expanduser(os.path.join('~', 'Music', 'Backspin'))
+DEFAULT_OUTPUT = os.path.expanduser(os.path.join('~', 'Music', 'Backspins'))
 AUDIO_EXTS = {
     '.flac', '.mp3', '.m4a', '.mp4', '.aac',
     '.aiff', '.aif', '.aifc', '.wav',
@@ -1523,7 +1523,7 @@ def choose_folder_dialog():
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = 'Backspin/1.0'
+    server_version = 'Backspins/1.0'
 
     def log_message(self, *args):
         pass
@@ -1741,6 +1741,29 @@ class Handler(BaseHTTPRequestHandler):
             # the browser never has to ask twice.
             self._json({'groups': groups, 'quality': quality,
                         'ignored': sorted(dupes_ignored())})
+        elif path == '/api/storage':
+            # What the app keeps on disk, and where (storage.py).
+            import storage
+            try:
+                out = storage.report()
+                q = parse_qs(parsed.query)
+                if q.get('budget'):
+                    import library_backup as lb
+                    n, b = lb.budget_preview(int(q['budget'][0] or 0))
+                    out['preview'] = {'copies': n, 'bytes': b}
+                self._json(out)
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 500)
+
+        elif path == '/api/access':
+            # Can the app reach the library and the music files (access.py).
+            import access
+            try:
+                lib = all_library() or {}
+                self._json(access.check(lib.get('tracks') or []))
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 500)
+
         elif path == '/api/vocabulary':
             # The starter vocabulary, and how much of it this library lacks.
             import vocabulary
@@ -2021,6 +2044,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({'error': str(e)[:300]}, 500)
 
 
+        elif path == '/i18n.js':
+            self._send_file(os.path.join(TOOL_DIR, 'i18n.js'),
+                            'text/javascript; charset=utf-8')
         elif path == '/menubar':
             self._send_file(os.path.join(TOOL_DIR, 'menubar.html'),
                             'text/html; charset=utf-8')
@@ -2856,6 +2882,35 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({'error': str(e)[:300]}, 500)
 
 
+        elif path == '/api/storage/clear':
+            import storage
+            try:
+                self._json(storage.clear(str(data.get('key') or '')))
+            except Exception as e:
+                self._json({'error': str(e)[:300]}, 400)
+
+        elif path == '/api/storage/budget':
+            # The size limit for library backups. The screen has already shown
+            # what it removes; this applies it straight away.
+            import library_backup as lb
+            mb = max(0, int(data.get('mb') or 0))
+            prefs.save({'backup_budget_mb': mb})
+            removed = lb.prune() if mb else []
+            self._json({'ok': True, 'mb': mb, 'removed': len(removed)})
+
+        elif path == '/api/storage/reveal':
+            # ⚠ Only the app's own two folders, by name — never a path from the page.
+            import storage
+            where = {'app': prefs.APP_DIR, 'backups': prefs.BACKUP_DIR,
+                     'previews': storage.preview_dir()}.get(str(data.get('where') or ''))
+            if where and os.path.isdir(where):
+                open_in_file_manager(where)
+            self._json({'ok': bool(where)})
+
+        elif path == '/api/access/open':
+            import access
+            self._json({'ok': access.open_pane(str(data.get('pane') or ''))})
+
         elif path == '/api/vocabulary/apply':
             # Adds the starter MyTag groups and colour labels (vocabulary.py).
             # Only adds; refuses while rekordbox is open, backs up first.
@@ -3221,7 +3276,7 @@ BROWSER_APP = 'Google Chrome'
 
 # The Mac app (app/ in this folder, installed by app/build.sh). It finds this
 # server by itself, so opening it is all it takes.
-APP_NAMES = ('Backspin', 'Rekordbox Toolkit')   # the second: before the rename
+APP_NAMES = ('Backspins', 'Backspin', 'Rekordbox Toolkit')   # the others: earlier names
 
 
 def open_in_browser(url):
@@ -3342,7 +3397,7 @@ def _restart_self():
     if '--no-browser' not in args:
         args.append('--no-browser')     # it is already open somewhere
     if FROZEN:
-        # The packaged app runs the server as `Backspin --server …`; desktop.py
+        # The packaged app runs the server as `Backspins --server …`; desktop.py
         # takes the switch out of argv before main() reads it.
         os.execv(sys.executable, [sys.executable, '--server'] + args)
     vpy = os.path.join(TOOL_DIR, '.venv', 'bin', 'python3')
@@ -3393,7 +3448,7 @@ def save_set_playlist(name, ids, playlist_id=None):
 
 
 def main():
-    ap = argparse.ArgumentParser(description='Backspin (local server)')
+    ap = argparse.ArgumentParser(description='Backspins (local server)')
     ap.add_argument('--port', type=int, default=8765)
     ap.add_argument('--no-browser', action='store_true')
     # The desktop app (desktop.py) learns the port this way: the server walks
@@ -3433,7 +3488,7 @@ def main():
     if args.port_file:
         with open(args.port_file, 'w') as fh:
             fh.write(str(port))
-    print('Backspin')
+    print('Backspins')
     print(f'  UI:        {url}')
     print(f'  Converter: {STATE["converter"] or "NONE (install ffmpeg)"}')
     print(f'  Output:    {DEFAULT_OUTPUT}')

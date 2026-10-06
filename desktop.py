@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backspin as a desktop app, on Windows and macOS: one window, no browser.
+"""Backspins as a desktop app, on Windows and macOS: one window, no browser.
 
 The same shape as the Swift app in app/: it owns nothing of the library. It
 starts the server as its own process, opens a window on it, and stops the
@@ -7,14 +7,14 @@ server again when the window closes. The window is pywebview — WebView2
 (Edge) on Windows, WebKit on macOS. Without pywebview it falls back to the
 default browser and keeps the server running until Ctrl+C.
 
-Packaged with PyInstaller (backspin.spec) this one program is every program
+Packaged with PyInstaller (backspins.spec) this one program is every program
 the app needs, chosen by its first switch:
 
-    Backspin                 the window (and the server behind it)
-    Backspin --server …      the server alone — what the window starts
-    Backspin --musicdna …    the audio analysis worker the server starts
-    Backspin --menubar       the macOS menu bar icon the server starts
-    Backspin --smoke         start the server, check it answers, stop (CI)
+    Backspins                 the window (and the server behind it)
+    Backspins --server …      the server alone — what the window starts
+    Backspins --musicdna …    the audio analysis worker the server starts
+    Backspins --menubar       the macOS menu bar icon the server starts
+    Backspins --smoke         start the server, check it answers, stop (CI)
 
 From source the same file works: `python3 desktop.py`.
 """
@@ -29,7 +29,7 @@ import urllib.request
 
 FROZEN = bool(getattr(sys, 'frozen', False))
 HERE = os.path.dirname(os.path.abspath(__file__))
-TITLE = 'Backspin'
+TITLE = 'Backspins'
 
 
 def _quiet_streams(name):
@@ -51,7 +51,7 @@ def _self(*args):
 
 def start_server():
     """Start the server process; return (process, url) once it answers."""
-    fd, port_file = tempfile.mkstemp(prefix='backspin-port-')
+    fd, port_file = tempfile.mkstemp(prefix='backspins-port-')
     os.close(fd)
     os.remove(port_file)
     flags = 0
@@ -110,7 +110,7 @@ def run_window():
         except ImportError:
             import webbrowser
             webbrowser.open(url)
-            print('Backspin is running at %s — Ctrl+C to stop.' % url)
+            print('Backspins is running at %s — Ctrl+C to stop.' % url)
             try:
                 proc.wait()
             except KeyboardInterrupt:
@@ -142,7 +142,7 @@ def smoke():
         with urllib.request.urlopen(url + '/', timeout=10) as r:
             page = r.read()
             print('page:', r.status, len(page), 'bytes')
-            if b'Backspin' not in page:
+            if b'Backspins' not in page:
                 return 1
         return 0
     finally:

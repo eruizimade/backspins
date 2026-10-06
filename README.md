@@ -1,25 +1,25 @@
-<p align="center"><img src="assets/backspin-1024.png" width="128" alt=""></p>
+<p align="center"><img src="assets/backspins-1024.png" width="128" alt=""></p>
 
-# Backspin
+# Backspins
 
 **Look after your rekordbox library, and prepare your sets faster than rekordbox lets you.**
 
-Backspin is a desktop app for DJs who use rekordbox 6 or 7. It reads your
+Backspins is a desktop app for DJs who use rekordbox 6 or 7. It reads your
 library, finds what is wrong with it, and helps you tag, sort, listen and
 build sets, then writes the results back into rekordbox, safely.
 
 It runs entirely on your own computer. Your library is never uploaded.
 
-> Backspin is an independent project. It is not made by, affiliated with or
+> Backspins is an independent project. It is not made by, affiliated with or
 > endorsed by AlphaTheta or Pioneer DJ. "rekordbox" is their trademark.
 
 ## Download
 
 Get the latest build from the [Releases](../../releases) page:
 
-- **Windows**: `Backspin-windows.zip`. Unzip it and run `Backspin.exe`.
-- **macOS (Apple Silicon)**: `Backspin-macos-arm64.zip`. Unzip it and drag
-  `Backspin.app` to Applications. The app is not notarised yet, so the first
+- **Windows**: `Backspins-windows.zip`. Unzip it and run `Backspins.exe`.
+- **macOS (Apple Silicon)**: `Backspins-macos-arm64.zip`. Unzip it and drag
+  `Backspins.app` to Applications. The app is not notarised yet, so the first
   time you need to right-click it and choose **Open**.
 
 For converting files you also need **ffmpeg**: `winget install ffmpeg` on
@@ -40,11 +40,14 @@ The first time it opens, a short animated tour shows how it all fits together
 | **Import** | Scan a folder of new music, rename it to `Title - Artist`, convert FLAC to AIFF, and add it to rekordbox under a colour that means "not looked at yet". |
 | **Health** | Duplicates (it compares the real quality and length, keeps the better copy and merges your tags, playlists and cues into it), quality bands, **compatibility by CDJ generation** (which players your library plays on, and exactly which files hold you back), shop branding left in your tags, and missing artwork. |
 | **Teach** | Teach the library a tag ("is this Acid?") or an ordering ("which is more intense?") by answering a few questions. It analyses the audio itself (notes, key, chords, timbre, groove), learns from your answers and your existing tags, tells you how often it is right, and ranks the whole library for you to confirm. |
-| **Backups** | A copy of your library every hour it changes, kept by age. Also a rekordbox XML and readable JSON version that will outlive any change to rekordbox's encryption. |
+| **Your data** | **Access**: whether Backspins can read your rekordbox library and every music file, and if macOS blocks a folder, which setting to change. **Storage**: everything it keeps on disk, in bytes, with where it lives. **Backups**: a copy of your library every hour it changes, kept by age within a size limit you choose, plus rekordbox XML and readable JSON versions that will outlive any change to rekordbox's encryption. |
+
+The interface is in **English and Spanish** (it follows your system language;
+switch with EN / ES at the bottom of the sidebar).
 
 ## Your words, not ours
 
-Backspin works with your own rekordbox vocabulary. It works out which MyTag
+Backspins works with your own rekordbox vocabulary. It works out which MyTag
 group is the kind of night, which is the mood and which is the running order
 from what is in them, whatever you call them.
 
@@ -76,25 +79,48 @@ These are guarantees, not intentions. They are enforced in the code:
   `127.0.0.1`. It refuses any request that comes from another website open in
   your browser, so a page cannot reach your library through it.
 
-## Backspin Cloud (coming)
+## Your disk and your permissions
 
-The app is free and open source, and will stay that way. Backspin Cloud will
+Nothing is hidden. **Your data → Storage** lists everything Backspins keeps,
+with its size and folder:
+
+- **Library backups** are the big one: a full copy of rekordbox's database
+  (about 40 MB for a few thousand tracks) each time it changes, kept by age.
+  They are limited to **2 GB** by default (oldest go first, the two newest
+  always stay); choose 1, 2, 5, 10 GB or no limit. A backup is never taken,
+  and so nothing is written, without the free space for it.
+- **Caches** (audio analysis, energy, artwork found, playback previews, logs)
+  can be cleared from the same screen; Backspins rebuilds them.
+- **Your work** (tagging queue, lessons, pairings, settings) is listed and
+  never offered for deletion.
+
+On macOS the system asks before any app reads Desktop, Documents, Downloads,
+external or network drives, and before it asks Finder to move a file to the
+Bin. **Your data → Access** opens every one of your music files to check, tells
+you which folders are blocked (and which are simply missing — a drive not
+connected), and opens the right page of System Settings. Keep `Backspins.app`
+in Applications: run straight from Downloads, macOS gives it a temporary copy
+and forgets what you allowed.
+
+## Backspins Cloud (coming)
+
+The app is free and open source, and will stay that way. Backspins Cloud will
 be an optional paid service with two parts:
 
 - **A hosted backup of your music**: the audio files themselves, not just
   the library.
 - **Your library on your phone**: tag, organise and listen from anywhere,
   with your computer switched off. Every change waits in the cloud and goes
-  into rekordbox the next time Backspin runs on your computer.
+  into rekordbox the next time Backspins runs on your computer.
 
 ## Run from source
 
 Python 3.9 or newer.
 
 ```bash
-git clone https://github.com/eruizimade/backspin.git
-cd backspin
-python3 convertidor.py        # Windows: py convertidor.py, or double-click Backspin.bat
+git clone https://github.com/eruizimade/backspins.git
+cd backspins
+python3 convertidor.py        # Windows: py convertidor.py, or double-click Backspins.bat
 ```
 
 On the first run a local `.venv` is created and the dependencies are installed
@@ -105,23 +131,23 @@ window instead of a browser tab:
 .venv/bin/python desktop.py   # after `pip install pywebview` in that .venv
 ```
 
-On macOS, `app/build.sh` builds a native window (`Backspin.app`) that runs this
+On macOS, `app/build.sh` builds a native window (`Backspins.app`) that runs this
 folder.
 
 To build the packaged app yourself: `pip install -r requirements.txt pyinstaller`,
-then `pyinstaller backspin.spec`. The GitHub workflow in `.github/workflows`
+then `pyinstaller backspins.spec`. The GitHub workflow in `.github/workflows`
 does this for Windows and macOS on every push, and checks that the result
 starts.
 
 ## Settings
 
-Plain JSON in your app folder (`~/.config/backspin/settings.json`, or
-`%APPDATA%\Backspin\settings.json` on Windows). Delete the file and every
+Plain JSON in your app folder (`~/.config/backspins/settings.json`, or
+`%APPDATA%\Backspins\settings.json` on Windows). Delete the file and every
 default comes back.
 
 | Setting | What it does |
 |---|---|
-| `library_db` | Where your rekordbox database is. Leave it empty and Backspin finds it, which also covers a library on an external drive. |
+| `library_db` | Where your rekordbox database is. Leave it empty and Backspins finds it, which also covers a library on an external drive. |
 | `library_key` | Only needed if a future rekordbox changes its encryption key. |
 | `ready_color` | The rekordbox colour that means "ready to play". Empty means every track counts. |
 | `energy_in_comment` | Reads a leading number in the comment (`6 - dark roller`) as an Energy column. |

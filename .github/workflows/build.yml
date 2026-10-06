@@ -20,9 +20,9 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            asset: Backspin-windows.zip
+            asset: Backspins-windows.zip
           - os: macos-14
-            asset: Backspin-macos-arm64.zip
+            asset: Backspins-macos-arm64.zip
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -37,35 +37,35 @@ jobs:
         run: python -m compileall -q .
       - name: Package
         env:
-          BACKSPIN_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0' }}
-        run: pyinstaller --noconfirm backspin.spec
+          BACKSPINS_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0' }}
+        run: pyinstaller --noconfirm backspins.spec
 
       - name: Smoke test (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         env:
-          BACKSPIN_HOME: ${{ runner.temp }}\backspin-home
+          BACKSPINS_HOME: ${{ runner.temp }}\backspins-home
         run: |
-          New-Item -ItemType Directory -Force $env:BACKSPIN_HOME | Out-Null
-          $p = Start-Process -FilePath dist\Backspin\Backspin.exe -ArgumentList '--smoke' -Wait -PassThru
-          Get-Content "$env:BACKSPIN_HOME\smoke.log" -ErrorAction SilentlyContinue
-          Get-Content "$env:BACKSPIN_HOME\server.log" -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force $env:BACKSPINS_HOME | Out-Null
+          $p = Start-Process -FilePath dist\Backspins\Backspins.exe -ArgumentList '--smoke' -Wait -PassThru
+          Get-Content "$env:BACKSPINS_HOME\smoke.log" -ErrorAction SilentlyContinue
+          Get-Content "$env:BACKSPINS_HOME\server.log" -ErrorAction SilentlyContinue
           if ($p.ExitCode -ne 0) { throw "smoke test failed: $($p.ExitCode)" }
       - name: Smoke test (macOS)
         if: runner.os == 'macOS'
         env:
-          BACKSPIN_HOME: ${{ runner.temp }}/backspin-home
+          BACKSPINS_HOME: ${{ runner.temp }}/backspins-home
         run: |
-          mkdir -p "$BACKSPIN_HOME"
-          dist/Backspin.app/Contents/MacOS/Backspin --smoke
+          mkdir -p "$BACKSPINS_HOME"
+          dist/Backspins.app/Contents/MacOS/Backspins --smoke
 
       - name: Zip (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path dist\Backspin -DestinationPath ${{ matrix.asset }}
+        run: Compress-Archive -Path dist\Backspins -DestinationPath ${{ matrix.asset }}
       - name: Zip (macOS)
         if: runner.os == 'macOS'
-        run: ditto -c -k --keepParent dist/Backspin.app ${{ matrix.asset }}
+        run: ditto -c -k --keepParent dist/Backspins.app ${{ matrix.asset }}
 
       - uses: actions/upload-artifact@v4
         with:
@@ -84,5 +84,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" Backspin-*.zip \
-            --repo "${{ github.repository }}" --title "Backspin ${{ github.ref_name }}" --generate-notes
+          gh release create "${{ github.ref_name }}" Backspins-*.zip \
+            --repo "${{ github.repository }}" --title "Backspins ${{ github.ref_name }}" --generate-notes

@@ -107,6 +107,15 @@ def backup_db(db_path=None, max_age=None):
         except OSError:
             pass
     os.makedirs(BACKUP_DIR, exist_ok=True)
+    # ⚠ Room first. A copy that fills the disk half-way leaves no backup AND
+    # a disk rekordbox itself can no longer save to. Refusing here also stops
+    # the write that asked for the backup — nothing is written without one.
+    need = sum(os.path.getsize(src + s) for s in ('', '-wal', '-shm') if os.path.exists(src + s))
+    free = shutil.disk_usage(BACKUP_DIR).free
+    if free < need + 512 * 1024 * 1024:
+        raise RuntimeError('Not enough free disk space for a backup of the library '
+                           '(%d MB needed, %d MB free, keeping 512 MB spare). Nothing was written.'
+                           % (need // 1048576, free // 1048576))
     stamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
     dst = os.path.join(BACKUP_DIR, 'master-%s.db' % stamp)
     # ⚠ Copy to a private temp name and rename into place. Copied straight to

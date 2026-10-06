@@ -1,10 +1,10 @@
 #!/bin/zsh
-# Double-click to start Backspin from this folder (macOS).
+# Double-click to start Backspins from this folder (macOS).
 #
 # If the Mac app is installed (app/build.sh), this just opens it: the app
 # starts the server itself and stops it again when you quit it. Otherwise it
 # runs the server here and opens a browser.
-if open -a "Backspin" 2>/dev/null; then
+if open -a "Backspins" 2>/dev/null; then
   exit 0
 fi
 # Tries several python3 binaries and uses the first that really works: some

@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Builds "Backspin.app" and puts it in ~/Applications.
+# Builds "Backspins.app" and puts it in ~/Applications.
 #
 #   app/build.sh            build and install
 #   app/build.sh --no-install   build into app/build only
@@ -14,7 +14,7 @@
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 TOOL="$(cd "$HERE/.." && pwd)"
-NAME="Backspin"
+NAME="Backspins"
 OUT="$HERE/build"
 APP="$OUT/$NAME.app"
 
@@ -24,10 +24,10 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 echo "· compiling"
 swiftc -O -swift-version 5 -target arm64-apple-macosx13.0 \
   -framework Cocoa -framework WebKit \
-  -o "$APP/Contents/MacOS/Backspin" "$HERE/main.swift"
+  -o "$APP/Contents/MacOS/Backspins" "$HERE/main.swift"
 
 echo "· icon"
-cp "$TOOL/assets/backspin.icns" "$APP/Contents/Resources/AppIcon.icns"
+cp "$TOOL/assets/backspins.icns" "$APP/Contents/Resources/AppIcon.icns"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -36,8 +36,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <dict>
   <key>CFBundleName</key><string>$NAME</string>
   <key>CFBundleDisplayName</key><string>$NAME</string>
-  <key>CFBundleIdentifier</key><string>app.backspin.mac</string>
-  <key>CFBundleExecutable</key><string>Backspin</string>
+  <key>CFBundleIdentifier</key><string>app.backspins.mac</string>
+  <key>CFBundleExecutable</key><string>Backspins</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>1.0</string>
@@ -46,6 +46,12 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSApplicationCategoryType</key><string>public.app-category.music</string>
   <key>NSHighResolutionCapable</key><true/>
   <key>NSSupportsAutomaticTermination</key><false/>
+  <key>NSDesktopFolderUsageDescription</key><string>Backspins reads your music files here to draw their waveforms, play them and check their quality. They never leave this computer.</string>
+  <key>NSDocumentsFolderUsageDescription</key><string>Backspins reads your music files here to draw their waveforms, play them and check their quality. They never leave this computer.</string>
+  <key>NSDownloadsFolderUsageDescription</key><string>Backspins reads your music files here to draw their waveforms, play them and check their quality. They never leave this computer.</string>
+  <key>NSRemovableVolumesUsageDescription</key><string>Backspins reads your music files here to draw their waveforms, play them and check their quality. They never leave this computer.</string>
+  <key>NSNetworkVolumesUsageDescription</key><string>Backspins reads your music files here to draw their waveforms, play them and check their quality. They never leave this computer.</string>
+  <key>NSAppleEventsUsageDescription</key><string>Backspins asks Finder to move files you delete to the Bin, so they can always be put back.</string>
   <key>NSAppTransportSecurity</key>
   <dict><key>NSAllowsLocalNetworking</key><true/></dict>
   <key>ToolkitDir</key><string>$TOOL</string>

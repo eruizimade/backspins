@@ -59,6 +59,11 @@ DB_TIERS = [
     (14 * DAY, 'day'),          # two weeks: one a day
     (8 * 7 * DAY, 'week'),      # two months: one a week
 ]
+#: The most copies of the database the tiers above can keep at once (6 hours
+#: of hourly copies, 48 hourly, 14 daily, 8 weekly). Times the size of the
+#: library, that is the worst case with no size limit — shown on screen.
+MAX_DB_COPIES = 6 + 48 + 14 + 8
+
 TEXT_TIERS = [
     (2 * DAY, None),            # the last two days: everything
     (365 * DAY, 'day'),         # a year: one a day
@@ -155,7 +160,51 @@ def prune(folder=BACKUP_DIR, now=None):
                 except OSError:
                     pass
             removed.append(name)
+    removed += _enforce_budget(folder)
     return removed
+
+
+def _enforce_budget(folder=BACKUP_DIR, budget_mb=None, dry=False):
+    """Oldest database copies out until they fit the size limit.
+
+    ⚠ The two newest always stay, whatever the limit says: a limit smaller
+    than two copies of the library would otherwise leave nothing to restore.
+    The readable XML/JSON versions are small and are not counted.
+    """
+    if budget_mb is None:
+        budget_mb = settings.load().get('backup_budget_mb') or 0
+    budget = int(budget_mb) * 1024 * 1024
+    if budget <= 0:
+        return []
+    copies = sorted(_listing(folder)['master'].items())           # oldest first
+    def size(name):
+        total = 0
+        for suf in ('', '-wal', '-shm'):
+            try:
+                total += os.path.getsize(os.path.join(folder, name + suf))
+            except OSError:
+                pass
+        return total
+    sizes = {name: size(name) for _, name in copies}
+    total = sum(sizes.values())
+    removed = []
+    while total > budget and len(copies) > 2:
+        _, name = copies.pop(0)
+        if not dry:
+            for suf in ('', '-wal', '-shm'):
+                try:
+                    os.remove(os.path.join(folder, name + suf))
+                except OSError:
+                    pass
+        total -= sizes[name]
+        removed.append((name, sizes[name]) if dry else name)
+    return removed
+
+
+def budget_preview(budget_mb):
+    """What a size limit would remove right now: (copies, bytes)."""
+    gone = _enforce_budget(BACKUP_DIR, budget_mb, dry=True)
+    return len(gone), sum(s for _, s in gone)
 
 
 def listing(folder=BACKUP_DIR):

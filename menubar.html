@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<script src="/i18n.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tag what's playing</title>
@@ -178,9 +179,9 @@
   <canvas class="wave" id="wave"></canvas>
   <header>
     <div class="headText">
-      <div class="title" id="title">…</div>
-      <div class="artist" id="artist"></div>
-      <div class="meta" id="meta"></div>
+      <div class="title" id="title" translate="no">…</div>
+      <div class="artist" id="artist" translate="no"></div>
+      <div class="meta" id="meta" translate="no"></div>
     </div>
     <div class="side" id="nav" style="display:none">
       <div class="nav">
@@ -203,7 +204,7 @@
   <main id="body">
     <div id="emptyBox"></div>
     <div id="fields"></div>
-    <div id="banksBox"></div>
+    <div id="banksBox" translate="no"></div>
     <div id="more"></div>
   </main>
   <!-- ⚠ Outside <main>: it used to sit at the very bottom of the scroll,
@@ -217,7 +218,7 @@
     <span class="dot" id="dot" style="display:none"></span>
     <span id="queued"></span><span class="grow"></span><span id="hint"></span>
     <button class="quitBtn" id="quitBtn" type="button" hidden
-            title="Quit Backspin: the app, the server and this icon">Quit</button>
+            title="Quit Backspins: the app, the server and this icon">Quit</button>
   </footer>
 
 <script>
@@ -513,7 +514,7 @@
       return g.toLowerCase().indexOf(seg) >= 0 && g.toLowerCase() !== seg;
     }).slice(0, 6);
     if (!hits.length) return;
-    var box = document.createElement('div'); box.className = 'auto';
+    var box = document.createElement('div'); box.className = 'auto'; box.translate = false;
     hits.forEach(function(g){
       var b2 = document.createElement('button');
       b2.type = 'button'; b2.textContent = g;
@@ -529,7 +530,7 @@
 
   function paint(data){
     var tr = data.track;
-    $('title').textContent = tr.title || '(untitled)';
+    $('title').textContent = tr.title || (window.I18N ? I18N.t('(untitled)') : '(untitled)');
     $('artist').textContent = tr.artist || '';
     $('meta').textContent = [tr.bpm ? tr.bpm + ' BPM' : '', tr.key,
                              (tr.genres || []).join(' / ')].filter(Boolean).join('  ·  ');

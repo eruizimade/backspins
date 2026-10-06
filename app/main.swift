@@ -1,4 +1,4 @@
-// Backspin — the toolkit as a Mac app, not a browser tab.
+// Backspins — the toolkit as a Mac app, not a browser tab.
 //
 // A window with a WebKit view showing the same interface the server has always
 // served. The app owns nothing of the library: it finds the toolkit server (or
@@ -74,7 +74,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
     var port: Int?
     var toolDir = ""
     let log = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent("Library/Logs/Backspin.log")
+        .appendingPathComponent("Library/Logs/Backspins.log")
 
     // ── start ──────────────────────────────────────────────────────────────
     func applicationDidFinishLaunching(_ note: Notification) {
@@ -98,7 +98,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
                                          .fullSizeContentView]
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1440, height: 900),
                           styleMask: style, backing: .buffered, defer: false)
-        window.title = "Backspin"
+        window.title = "Backspins"
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
@@ -207,7 +207,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
         }
         DispatchQueue.main.async {
             self.showMessage("The toolkit did not start",
-                             detail: "Its log is at ~/Library/Logs/Backspin.log")
+                             detail: "Its log is at ~/Library/Logs/Backspins.log")
         }
     }
 
@@ -433,17 +433,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate,
             main.addItem(item)
             return m
         }
-        let app = sub("Backspin")
-        app.addItem(withTitle: "About Backspin",
+        let app = sub("Backspins")
+        app.addItem(withTitle: "About Backspins",
                     action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "")
         app.addItem(.separator())
-        app.addItem(withTitle: "Hide Backspin", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        app.addItem(withTitle: "Hide Backspins", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
         let others = app.addItem(withTitle: "Hide Others",
                                  action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
         others.keyEquivalentModifierMask = [.command, .option]
         app.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "")
         app.addItem(.separator())
-        app.addItem(withTitle: "Quit Backspin", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        app.addItem(withTitle: "Quit Backspins", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
 
         let edit = sub("Edit")
         edit.addItem(withTitle: "Undo", action: Selector(("undo:")), keyEquivalent: "z")

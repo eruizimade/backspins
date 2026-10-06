@@ -27,19 +27,25 @@ def _default_app_dir():
     # ⚠ The folder kept its old name for whoever already has one: the tagging
     # queue in it is work waiting to be written, and a rename must never
     # strand it.
-    legacy = os.path.join(os.path.expanduser('~'), '.config', 'rekordbox-toolkit')
-    if os.path.isdir(legacy):
-        return legacy
-    if os.name == 'nt' and os.environ.get('APPDATA'):
-        return os.path.join(os.environ['APPDATA'], 'Backspin')
-    return os.path.join(os.path.expanduser('~'), '.config', 'backspin')
+    # Oldest name first, then 0.1.x's "Backspin", then today's.
+    home = os.path.expanduser('~')
+    appdata = os.environ.get('APPDATA') if os.name == 'nt' else None
+    for legacy in (os.path.join(home, '.config', 'rekordbox-toolkit'),
+                   os.path.join(appdata, 'Backspin') if appdata else
+                   os.path.join(home, '.config', 'backspin')):
+        if os.path.isdir(legacy):
+            return legacy
+    if appdata:
+        return os.path.join(appdata, 'Backspins')
+    return os.path.join(home, '.config', 'backspins')
 
 
 # ⚠ Redirectable on purpose. Everything personal lives here — your settings
 # and, more importantly, the tagging QUEUE — and all instances of the app share
 # it. Pointing a second copy somewhere else is the only way to try things
 # without risking work that is waiting to be synced.
-APP_DIR = (os.environ.get('BACKSPIN_HOME') or os.environ.get('REKORDBOX_TOOLKIT_HOME')
+APP_DIR = (os.environ.get('BACKSPINS_HOME') or os.environ.get('BACKSPIN_HOME')
+           or os.environ.get('REKORDBOX_TOOLKIT_HOME')
            or _default_app_dir())
 
 # What the app writes beside itself — library backups, the conversion log.
@@ -109,6 +115,10 @@ DEFAULTS = {
     # the Inbox: {"MOOD": ["Dark", "Acid", …], …}. Tags not listed (new ones)
     # keep rekordbox's order after the ones you placed.
     'tag_order': {},
+    # How much disk the library backups may take, in MB (0 = no limit: only
+    # the age tiers in library_backup.py decide). The oldest copies go first,
+    # and the two newest always stay.
+    'backup_budget_mb': 2048,
 }
 
 

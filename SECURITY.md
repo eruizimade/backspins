@@ -1,6 +1,6 @@
 # Security
 
-Backspin runs a small web server on your own computer (`127.0.0.1`, port
+Backspins runs a small web server on your own computer (`127.0.0.1`, port
 8765 or the next free one) and its window is a page served by it. That
 server can read and change your rekordbox library, so it only answers its
 own pages: requests whose `Host` is not the loopback address, whose `Origin`

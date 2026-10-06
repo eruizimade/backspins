@@ -1,5 +1,5 @@
-# What Backspin needs. Running from source, convertidor.py installs these into
-# a local .venv by itself; this file is for packaging (backspin.spec) and for
+# What Backspins needs. Running from source, convertidor.py installs these into
+# a local .venv by itself; this file is for packaging (backspins.spec) and for
 # anyone who prefers to manage the environment themselves.
 mutagen>=1.47
 sqlcipher3-wheels>=0.5
