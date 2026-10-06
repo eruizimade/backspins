@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+backups/
+build/
+dist/
+app/build/
+flac-a-aiff.log
+.DS_Store

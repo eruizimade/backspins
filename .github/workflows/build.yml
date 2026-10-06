@@ -1,0 +1,88 @@
+# Builds the desktop app for Windows and macOS on every push, checks that the
+# packaged app starts and answers (desktop.py --smoke), and on a version tag
+# (v0.1.0, …) publishes both as a GitHub release.
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  app:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: Backspin-windows.zip
+          - os: macos-14
+            asset: Backspin-macos-arm64.zip
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+      - name: Python files compile
+        run: python -m compileall -q .
+      - name: Package
+        env:
+          BACKSPIN_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0' }}
+        run: pyinstaller --noconfirm backspin.spec
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          BACKSPIN_HOME: ${{ runner.temp }}\backspin-home
+        run: |
+          New-Item -ItemType Directory -Force $env:BACKSPIN_HOME | Out-Null
+          $p = Start-Process -FilePath dist\Backspin\Backspin.exe -ArgumentList '--smoke' -Wait -PassThru
+          Get-Content "$env:BACKSPIN_HOME\smoke.log" -ErrorAction SilentlyContinue
+          Get-Content "$env:BACKSPIN_HOME\server.log" -ErrorAction SilentlyContinue
+          if ($p.ExitCode -ne 0) { throw "smoke test failed: $($p.ExitCode)" }
+      - name: Smoke test (macOS)
+        if: runner.os == 'macOS'
+        env:
+          BACKSPIN_HOME: ${{ runner.temp }}/backspin-home
+        run: |
+          mkdir -p "$BACKSPIN_HOME"
+          dist/Backspin.app/Contents/MacOS/Backspin --smoke
+
+      - name: Zip (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: Compress-Archive -Path dist\Backspin -DestinationPath ${{ matrix.asset }}
+      - name: Zip (macOS)
+        if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent dist/Backspin.app ${{ matrix.asset }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset }}
+          path: ${{ matrix.asset }}
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" Backspin-*.zip \
+            --repo "${{ github.repository }}" --title "Backspin ${{ github.ref_name }}" --generate-notes

@@ -1,0 +1,43 @@
+# PyInstaller recipe for the desktop app:   pyinstaller backspin.spec
+#
+# One program that is every program Backspin runs (see desktop.py): the
+# window, the server, the audio analysis workers, the menu bar icon.
+#
+# ⚠ The server imports most of its modules lazily, inside the request that
+# needs them, so PyInstaller cannot see them — every module in this folder is
+# listed as a hidden import, or the packaged app would fail on the first click
+# that reaches one.
+import glob
+import os
+import sys
+
+from PyInstaller.utils.hooks import collect_all, collect_submodules
+
+HERE = os.path.abspath(SPECPATH)
+LOCAL = sorted(os.path.splitext(os.path.basename(p))[0]
+               for p in glob.glob(os.path.join(HERE, '*.py'))
+               if os.path.basename(p) not in ('desktop.py',))
+
+datas = [(os.path.join(HERE, 'convertidor.html'), '.'),
+         (os.path.join(HERE, 'menubar.html'), '.')]
+binaries, hidden = [], list(LOCAL)
+for pkg in ('pyrekordbox', 'sqlcipher3', 'webview'):
+    d, b, h = collect_all(pkg)
+    datas += d; binaries += b; hidden += h
+hidden += collect_submodules('mutagen') + ['send2trash', 'tkinter', 'tkinter.filedialog']
+
+mac = sys.platform == 'darwin'
+icon = os.path.join(HERE, 'assets', 'backspin.icns' if mac else 'backspin.ico')
+
+a = Analysis([os.path.join(HERE, 'desktop.py')], pathex=[HERE], binaries=binaries,
+             datas=datas, hiddenimports=hidden, excludes=['matplotlib', 'IPython'])
+pyz = PYZ(a.pure)
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='Backspin',
+          console=False, icon=icon, argv_emulation=False)
+coll = COLLECT(exe, a.binaries, a.datas, name='Backspin')
+if mac:
+    app = BUNDLE(coll, name='Backspin.app', icon=icon, bundle_identifier='app.backspin.mac',
+                 info_plist={'CFBundleShortVersionString': os.environ.get('BACKSPIN_VERSION', '0.1.0'),
+                             'NSHighResolutionCapable': True,
+                             'LSApplicationCategoryType': 'public.app-category.music',
+                             'NSAppTransportSecurity': {'NSAllowsLocalNetworking': True}})

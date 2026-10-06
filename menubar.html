@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tag what's playing</title>
+<style>
+  /* Same palette as the app ("La cabina"). The popover is a native panel, so
+     it follows the system appearance too — a white sheet hanging off a dark
+     menu bar reads as a bug, not a choice. Chosen things are INVERTED, never
+     painted a colour: colour here always means something (a label, energy,
+     the three bands of the waveform). */
+  :root{
+    --bg:#ffffff; --panel:#f5f5f7; --line:#e3e3e8; --line2:#d2d2d7;
+    --text:#1d1d1f; --dim:#6e6e73; --faint:#8e8e93;
+    --accent:#007aff; --accent-ink:#0059c2;
+    --sel:#1d1d1f; --on-sel:#ffffff; --off:rgba(0,0,0,.06);
+    --wave-bg:#ffffff;
+    --warn-ink:#8a4700; --warn-soft:#fdf3e3; --ok-ink:#1b7a35; --ok-soft:#e8f6ec;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme:dark;
+      --bg:#16181d; --panel:#121418; --line:#262a32; --line2:#343a45;
+      --text:#e9ebf0; --dim:#a4abb8; --faint:#6f7786;
+      --accent:#4c8dff; --accent-ink:#9cc0ff;
+      --sel:#e9ebf0; --on-sel:#121418; --off:rgba(255,255,255,.07);
+      --wave-bg:#121418;
+      --warn-ink:#f5aa55; --warn-soft:#2b2219; --ok-ink:#6fd48c; --ok-soft:#18281f;
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--text);display:flex;flex-direction:column;
+       font:13px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
+       letter-spacing:-.006em;-webkit-font-smoothing:antialiased;
+       -webkit-user-select:none;user-select:none;cursor:default}
+
+  /* The strip follows the appearance: white in light mode, the booth's near
+     black in dark mode, with each band's colours tuned for its own ground. */
+  .wave{display:block;width:100%;height:62px;background:var(--wave-bg);cursor:pointer;
+        border-bottom:1px solid var(--line)}
+  .wave.empty{cursor:default}
+
+  header{padding:11px 13px 9px;border-bottom:1px solid var(--line);background:var(--panel);
+         display:flex;align-items:flex-start;gap:9px}
+  .headText{flex:1;min-width:0}
+  .nav{display:flex;gap:4px;flex:none}
+  /* A fixed width: an <input type=range> asks for ~130px by itself, and the
+     column grew to it and took the room from the track title. */
+  .side{display:flex;flex-direction:column;align-items:stretch;gap:9px;flex:none;
+        width:108px}
+  .side .nav{justify-content:space-between}
+  .volRow{display:flex;align-items:center;gap:6px;margin:0;cursor:default}
+  .volIco{width:14px;height:14px;flex:none;fill:var(--dim)}
+  .volIco .wave{fill:none;stroke:var(--dim);stroke-width:1.3;stroke-linecap:round}
+  /* The Mac's own slider shape: a thin track, filled up to the knob. */
+  #vol{-webkit-appearance:none;appearance:none;flex:1;min-width:0;width:0;height:4px;margin:0;
+       border-radius:2px;outline:none;cursor:pointer;
+       background:linear-gradient(to right, var(--text) var(--p, 100%),
+                                  var(--line2) var(--p, 100%))}
+  #vol::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+       background:#fff;box-shadow:0 0 0 .5px rgba(0,0,0,.25),0 1px 3px rgba(0,0,0,.35)}
+  .navBtn{font:inherit;font-size:15px;line-height:1;width:28px;height:28px;padding:0;
+          border-radius:7px;border:1px solid var(--line);background:transparent;
+          color:var(--text);cursor:pointer}
+  .navBtn:hover{border-color:var(--line2);background:var(--off)}
+  /* ⚠ The glyphs are different widths (▶ is wider than ❙❙), so the button
+     is fixed and the glyph centred — otherwise the whole row shuffles every
+     time you start or stop, which is the fault we just took out of the tags. */
+  .playBtn{font-size:12px;display:inline-flex;align-items:center;
+           justify-content:center}
+  .navBtn:disabled{color:var(--dim);border-color:transparent;background:var(--off);
+          cursor:default}
+  .title{font-size:13.5px;font-weight:600;line-height:1.3;
+         overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .artist{font-size:11.5px;color:var(--dim);margin-top:1px;
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .meta{font-size:10.5px;color:var(--dim);margin-top:4px;letter-spacing:.02em}
+  /* Changes waiting for rekordbox to close. The popover is where you tag with
+     rekordbox open, so it is exactly where the queue fills up — it must say
+     so here, not only in the browser window you are not looking at. */
+  .held{display:none;padding:6px 13px;font-size:11px;line-height:1.35;
+        color:var(--warn-ink,#7f4300);background:var(--warn-soft,#feefc3);
+        border-bottom:1px solid var(--line)}
+  .held.on{display:block}
+  .held.done{color:var(--ok-ink,#0f5323);background:var(--ok-soft,#e6f4ea)}
+  .held b{font-weight:600}
+
+  main{flex:1;overflow-y:auto;overscroll-behavior:contain;padding:4px 0 8px}
+
+  .bank{padding:9px 13px 4px}
+  .bank + .bank{border-top:1px solid var(--line)}
+  .bankName{font-size:11.5px;font-weight:600;color:var(--faint);margin-bottom:6px}
+  .tags{display:flex;flex-wrap:wrap;gap:5px}
+
+  .tag{font:inherit;font-size:12px;font-weight:500;line-height:1;padding:6px 10px;
+       border-radius:99px;border:1px solid var(--line);background:transparent;
+       color:var(--text);cursor:pointer;
+       transition:background .12s,border-color .12s,color .12s}
+  .tag:hover{border-color:var(--line2)}
+  /* ⚠ A chosen tag never fades, and never changes SIZE. It used to go bold,
+     and bold text is wider: in a row that wraps, every chip after the one you
+     tapped slid along — sometimes onto the next line — right where your
+     finger was going next. The fill alone says it is on; nothing else moves.
+     (The little "saving" dot is gone for the same reason: the save takes a
+     few milliseconds, and it was one more thing flickering under the finger.) */
+  .tag.on{background:var(--sel);border-color:var(--sel);color:var(--on-sel)}
+  .tag.on:hover{background:var(--sel);border-color:var(--sel);color:var(--on-sel)}
+
+  footer{border-top:1px solid var(--line);background:var(--panel);
+         padding:7px 13px;font-size:11px;color:var(--dim);
+         display:flex;align-items:center;gap:8px}
+  footer .grow{flex:1}
+  .quitBtn{font:inherit;font-size:11px;font-weight:500;line-height:1;padding:4px 8px;
+           margin:-3px -6px -3px 2px;border:0;border-radius:6px;background:transparent;
+           color:var(--dim);cursor:pointer}
+  .quitBtn:hover{background:var(--off);color:var(--text)}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+
+  .row{padding:9px 13px 4px}
+  /* ⚠ Label beside the control, not above it. Four stacked label lines
+     cost the height that pushed MOOD — where most of your taps go — below
+     the fold, so every track began with a scroll. */
+  .row.inline{display:flex;align-items:center;gap:10px;padding:6px 13px}
+  .row.inline .rowName{margin:0;width:46px;flex:none}
+  .row.inline > :last-child{flex:1;min-width:0}
+  .row.inline .num{min-width:25px}
+  .row + .row, .row + .bank, .bank + .row{border-top:1px solid var(--line)}
+  .rowName{font-size:11.5px;font-weight:600;color:var(--faint);margin-bottom:6px}
+
+  .stars{display:flex;gap:2px;align-items:center}
+  .star{font:inherit;font-size:19px;line-height:1;padding:1px 2px;border:0;
+        background:none;color:var(--line);cursor:pointer}
+  .star.on{color:var(--text)}
+  .star:hover{color:var(--dim)}
+  .clearStar{font-size:11px;color:var(--dim);background:none;border:0;
+             cursor:pointer;margin-left:6px;padding:3px 5px;border-radius:5px}
+  .clearStar:hover{background:var(--off);color:var(--text)}
+
+  .nums{display:flex;flex-wrap:wrap;gap:4px}
+  .num{font:inherit;font-size:12px;min-width:27px;padding:5px 0;border-radius:6px;
+       border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer}
+  .num.on{background:var(--ec, var(--sel));border-color:var(--ec, var(--sel));
+          color:#0d0f12}
+  .num:hover{border-color:var(--line2)}
+
+  .fld{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;
+       padding:7px 9px;color:var(--text);font:inherit;font-size:12.5px}
+  .fld:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .auto{margin-top:4px;display:flex;flex-wrap:wrap;gap:4px}
+  .auto button{font:inherit;font-size:11.5px;padding:4px 8px;border-radius:99px;
+       border:1px solid var(--line);background:transparent;color:var(--dim);cursor:pointer}
+  .auto button:hover{border-color:var(--line2);color:var(--text)}
+
+  .doneWrap{padding:8px 13px;border-top:1px solid var(--line);background:var(--panel);
+            display:flex;align-items:center;gap:10px;flex:none}
+  .doneWrap .left{font-size:11px;color:var(--dim);white-space:nowrap}
+  /* The button wears the colour of the label it stamps (BEATGRID here). */
+  .doneBtn{flex:1;font:inherit;font-size:13px;font-weight:600;padding:9px;
+       border-radius:9px;border:0;background:var(--lc, var(--sel));
+       color:#0d1426;cursor:pointer}
+  .doneBtn:hover{filter:brightness(1.06)}
+  /* Armed: something is still empty, and this press marks it as it is. */
+  .doneBtn.anyway{background:transparent;color:var(--text);
+                  box-shadow:inset 0 0 0 1.5px var(--lc, var(--line2))}
+  /* What is missing before a track can be marked done. */
+  .row.missing .rowName, .bank.missing .bankName{color:#ef5a5a}
+  .row.missing, .bank.missing{box-shadow:inset 3px 0 0 #ef5a5a}
+  .doneBtn:disabled{background:var(--off);border-color:transparent;color:var(--dim);
+       cursor:default}
+
+  .empty{padding:26px 20px;text-align:center;color:var(--dim);font-size:12px}
+  .empty b{display:block;color:var(--text);font-size:13px;font-weight:600;margin-bottom:5px}
+</style>
+</head>
+<body>
+  <canvas class="wave" id="wave"></canvas>
+  <header>
+    <div class="headText">
+      <div class="title" id="title">…</div>
+      <div class="artist" id="artist"></div>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="side" id="nav" style="display:none">
+      <div class="nav">
+        <button class="navBtn" id="prevBtn" type="button" title="Previous track">‹</button>
+        <button class="navBtn playBtn" id="playBtn" type="button" title="Play">▶</button>
+        <button class="navBtn" id="nextBtn" type="button" title="Next track">›</button>
+      </div>
+      <!-- The volume of the player in the app window: this popover has no
+           audio of its own, so it is a remote, like the buttons above. -->
+      <label class="volRow" title="Volume">
+        <svg class="volIco" viewBox="0 0 16 16" aria-hidden="true"><path
+             d="M2.5 6h2.6L8.5 3.2v9.6L5.1 10H2.5z"/><path class="wave"
+             d="M10.8 5.6a3.4 3.4 0 0 1 0 4.8M12.6 3.8a6 6 0 0 1 0 8.4"/></svg>
+        <input type="range" id="vol" min="0" max="1" step="0.01" value="1"
+               aria-label="Volume">
+      </label>
+    </div>
+  </header>
+  <div class="held" id="held" role="status"></div>
+  <main id="body">
+    <div id="emptyBox"></div>
+    <div id="fields"></div>
+    <div id="banksBox"></div>
+    <div id="more"></div>
+  </main>
+  <!-- ⚠ Outside <main>: it used to sit at the very bottom of the scroll,
+       and › at the very top, and you press them one after the other on
+       every single track. -->
+  <div class="doneWrap" id="doneWrap" style="display:none">
+    <button class="doneBtn" id="doneBtn" type="button"></button>
+    <span class="left" id="triageLeft"></span>
+  </div>
+  <footer>
+    <span class="dot" id="dot" style="display:none"></span>
+    <span id="queued"></span><span class="grow"></span><span id="hint"></span>
+    <button class="quitBtn" id="quitBtn" type="button" hidden
+            title="Quit Backspin: the app, the server and this icon">Quit</button>
+  </footer>
+
+<script>
+(function(){
+  'use strict';
+  var $ = function(id){ return document.getElementById(id); };
+  var STATE = {id: null, tags: {}, banks: [], sig: '', pending: {},
+               vals: {}, base: {}, genres: [], energyOn: true, doneColor: '',
+               editing: null, play: null, playAt: 0};
+
+  // Energy lives at the FRONT of the comment ("6 - dark roller"), so the two
+  // fields share one value and every write has to rebuild it from both.
+  function splitComment(raw){
+    raw = raw || '';
+    if (!STATE.energyOn) return {energy: null, note: raw};
+    var m = raw.match(/^\s*(\d{1,2})\s*[-–—.:]?\s*/);
+    var e = m ? parseInt(m[1], 10) : null;
+    if (e !== null && (e < 1 || e > 10)) return {energy: null, note: raw};
+    return {energy: e, note: m ? raw.slice(m[0].length) : raw};
+  }
+
+  function joinComment(energy, note){
+    note = (note || '').trim();
+    if (!STATE.energyOn || !energy) return note;
+    return note ? energy + ' - ' + note : String(energy);
+  }
+
+  // ⚠ `before` is always the LIBRARY value, never what is on screen: the queue
+  // replaces a previous op on the same field, so the surviving one is checked
+  // against what the database will still hold when it is applied.
+  // ⚠ One save at a time PER FIELD, chained. Two quick taps used to fly in
+  // parallel: the second carried the baseline from before the first had landed,
+  // the server rejected it as "changed elsewhere" and dropped it silently.
+  // Queuing them behind each other means the second always sees the truth.
+  var SAVE_CHAIN = {};
+
+  function setField(op, key, value){
+    if (!STATE.id) return;
+    var was = STATE.vals[key];
+    STATE.vals[key] = value;
+    // ⚠ Mark it IN FLIGHT. The 1s poll asks the server for values, and until
+    // the save has landed the server still answers with the old one — applying
+    // that answer wiped what you had just tapped, and the button then toggled
+    // the wrong way on the next press.
+    STATE.inflight = STATE.inflight || {};
+    STATE.inflight[key] = (STATE.inflight[key] || 0) + 1;
+    render();
+    var id = STATE.id;
+    var prev = SAVE_CHAIN[key] || Promise.resolve();
+    SAVE_CHAIN[key] = prev.catch(function(){}).then(function(){
+      return fetch('/api/tagger/enqueue', {method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ops: [{op: op, track: id, value: value,
+                                       before: STATE.base[key]}]})})
+        .then(function(r){ return r.json(); })
+        .then(function(j){
+          STATE.inflight[key] = Math.max(0, (STATE.inflight[key] || 1) - 1);
+          // ⚠ You have moved to another track while this was in flight —
+          // which "done, next" does on purpose, every time. The answer is
+          // about the OLD one: writing it into STATE would stamp the old
+          // track's colour onto the new one's baseline, and the next edit
+          // there would be rejected as "changed elsewhere".
+          if (STATE.id !== id) return;
+          var dropped = ((j.skipped || []).length + (j.failed || []).length) > 0;
+          if (dropped) {
+            // The server discarded it. Put the old value back rather than
+            // leaving a number on screen that nothing holds.
+            STATE.vals[key] = was;
+            STATE.sig = '';                 // force the next poll to reconcile
+            say('not saved — it changed in rekordbox');
+            render();
+            return;
+          }
+          if (j && j.saved && !j.deferred) STATE.base[key] = value;
+          say(j && j.deferred ? 'saved, waiting for rekordbox to close'
+                              : 'saved ✓');
+          refresh(true);
+        })
+        .catch(function(){
+          // ⚠ Never leave a phantom: the tap never reached the server.
+          STATE.inflight[key] = Math.max(0, (STATE.inflight[key] || 1) - 1);
+          if (STATE.id !== id) { say('could not save the last change'); return; }
+          STATE.vals[key] = was;
+          STATE.sig = '';
+          say('could not save — is the toolkit running?');
+          render();
+        });
+    });
+    return SAVE_CHAIN[key];
+  }
+
+  // Write whatever is in the focused field to the track it belongs to.
+  function commitFocused(trackId){
+    var el = document.activeElement;
+    if (!el || !trackId || !el.classList || !el.classList.contains('fld')) return;
+    var isNote = (el.id === 'tgNoteLive');
+    var val = String(el.value || '').trim();
+    var op = isNote ? 'set_comment' : 'set_genre';
+    var key = isNote ? 'comment' : 'genre';
+    var value = isNote
+      ? joinComment(splitComment(STATE.vals.comment).energy, val) : val;
+    if (value === (STATE.vals[key] || '')) { STATE.editing = null; return; }
+    STATE.editing = null;
+    fetch('/api/tagger/enqueue', {method: 'POST', keepalive: true,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ops: [{op: op, track: trackId, value: value,
+                                     before: STATE.base[key]}]})}).catch(function(){});
+  }
+
+  function say(msg, ms){
+    $('hint').textContent = msg;
+    clearTimeout(window.__hintT);
+    window.__hintT = setTimeout(function(){
+      $('hint').textContent = 'tap to tag';
+    }, ms || 2200);
+  }
+
+  // Which banks to leave out comes from YOUR settings (same source the Tagger
+  // panel reads), never a constant here — otherwise the two would drift apart.
+  var IGNORED = [];
+
+  var HELD = {last: 0, doneAt: 0};
+  function paintHeld(h){
+    var el = $('held');
+    if (h.count) {
+      el.className = 'held on';
+      el.innerHTML = '<b>' + h.count + ' change' + (h.count === 1 ? '' : 's')
+        + ' waiting for rekordbox to close.</b> '
+        + (h.rbOpen ? 'Written the moment you quit it — nothing to press.'
+                    : 'Writing them now.');
+      HELD.last = h.count;
+      return;
+    }
+    if (HELD.last) {
+      el.className = 'held on done';
+      el.innerHTML = '<b>Written to rekordbox: ' + HELD.last + ' change'
+        + (HELD.last === 1 ? '' : 's') + '.</b>';
+      HELD.last = 0; HELD.doneAt = Date.now();
+      return;
+    }
+    if (HELD.doneAt && Date.now() - HELD.doneAt > 6000) {
+      el.className = 'held'; HELD.doneAt = 0;
+    }
+  }
+
+  function paintEmpty(msg, sub){
+    $('title').textContent = '';
+    $('artist').textContent = '';
+    $('meta').textContent = '';
+    // ⚠ Hide the sections, do not wipe #body: the fields and banks live in
+    // containers that the rest of the code holds on to.
+    $('fields').innerHTML = ''; $('banksBox').innerHTML = ''; $('more').innerHTML = '';
+    $('doneWrap').style.display = 'none';
+    $('nav').style.display = 'none';
+    WAVE.path = null; WAVE.bands = null; WAVE.peaks = null;
+    STATE.play = null;
+    drawWave();
+    var e = $('emptyBox'); e.innerHTML = '';
+    var d = document.createElement('div'); d.className = 'empty';
+    var t = document.createElement('b'); t.textContent = msg;
+    d.appendChild(t); d.appendChild(document.createTextNode(sub || ''));
+    e.appendChild(d);
+    $('queued').textContent = '';
+    $('hint').textContent = '';
+    $('dot').style.display = 'none';
+  }
+
+  function fieldRow(label, node, inline, key){
+    var d = document.createElement('div'); d.className = 'row' + (inline ? ' inline' : '');
+    if (key) d.dataset.key = key;
+    var h = document.createElement('div'); h.className = 'rowName';
+    h.textContent = label;
+    d.appendChild(h); d.appendChild(node);
+    return d;
+  }
+
+  // The note as it is RIGHT NOW in the field, not as it was painted.
+  function liveNote(){
+    var ni = document.getElementById('tgNoteLive');
+    if (ni) return ni.value;
+    return splitComment(STATE.vals.comment).note;
+  }
+
+  function paintFields(){
+    var box = $('fields'); box.innerHTML = '';
+    // Genre and the note are below the tags: you set them on a handful of
+    // tracks, the tags on every one.
+    var more = $('more'); more.innerHTML = '';
+    var v = STATE.vals, parts = splitComment(v.comment);
+
+    // ── rating ──
+    var stars = document.createElement('div'); stars.className = 'stars';
+    var cur = parseInt(v.rating || 0, 10) || 0;
+    for (var i = 1; i <= 5; i++) (function(k){
+      var st = document.createElement('button');
+      st.type = 'button';
+      st.className = 'star' + (k <= cur ? ' on' : '');
+      st.textContent = k <= cur ? '★' : '☆';
+      st.addEventListener('click', function(){ setField('set_rating', 'rating', k); });
+      stars.appendChild(st);
+    })(i);
+    if (cur) {
+      var clr = document.createElement('button');
+      clr.type = 'button'; clr.className = 'clearStar'; clr.textContent = 'clear';
+      clr.addEventListener('click', function(){ setField('set_rating', 'rating', 0); });
+      stars.appendChild(clr);
+    }
+    box.appendChild(fieldRow('Rating', stars, true, 'rating'));
+
+    // ── energy ──
+    if (STATE.energyOn) {
+      var nums = document.createElement('div'); nums.className = 'nums';
+      for (var e = 1; e <= 10; e++) (function(k){
+        var nb = document.createElement('button');
+        nb.type = 'button';
+        nb.className = 'num' + (parts.energy === k ? ' on' : '');
+        nb.style.setProperty('--ec', ENERGY_RAMP[k - 1]);
+        nb.textContent = k;
+        // ⚠ Do not let the button steal focus, and read the note LIVE. In
+        // WKWebView a button click does not blur the focused input, so the
+        // note you were halfway through typing was never committed — and this
+        // handler composed the comment from the note as it was at the last
+        // paint, wiping what you had just written.
+        nb.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+        nb.addEventListener('click', function(){
+          // ⚠ Decide from the CURRENT state, never from `parts` captured when
+          // these buttons were painted. A poll landing in between repainted
+          // with the pre-save value, so the next tap toggled the opposite way
+          // and appeared to do nothing — the "I have to click energy twice".
+          var cur = splitComment(STATE.vals.comment);
+          var next = (cur.energy === k) ? null : k;     // tap again to clear
+          setField('set_comment', 'comment', joinComment(next, liveNote()));
+        });
+        nums.appendChild(nb);
+      })(e);
+      box.appendChild(fieldRow('Energy', nums, true, 'energy'));
+    }
+
+    // ── genre ──
+    var gwrap = document.createElement('div');
+    var gi = document.createElement('input');
+    gi.type = 'text'; gi.className = 'fld'; gi.spellcheck = false;
+    gi.placeholder = 'one, or several with a slash';
+    gi.value = v.genre || '';
+    gi.addEventListener('focus', function(){ STATE.editing = 'genre'; });
+    gi.addEventListener('blur', function(){
+      STATE.editing = null;
+      if ((gi.value || '') !== (v.genre || ''))
+        setField('set_genre', 'genre', gi.value.trim());
+    });
+    gi.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter') gi.blur();
+      // Escape takes it back to what it was, and leaving then saves nothing.
+      else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        gi.value = v.genre || '';
+        var o = gwrap.querySelector('.auto'); if (o) o.remove();
+        gi.blur();
+      }
+    });
+    gi.addEventListener('input', function(){ paintGenreHints(gi, gwrap); showMissing(); });
+    gwrap.appendChild(gi);
+    more.appendChild(fieldRow('Genre', gwrap, true, 'genre'));
+
+    // ── note ──
+    var ni = document.createElement('input');
+    ni.type = 'text'; ni.className = 'fld'; ni.spellcheck = false;
+    ni.id = 'tgNoteLive';
+    ni.placeholder = STATE.energyOn ? 'free note — after the energy' : 'comment';
+    ni.value = parts.note;
+    ni.addEventListener('focus', function(){ STATE.editing = 'note'; });
+    ni.addEventListener('blur', function(){
+      STATE.editing = null;
+      if (ni.value !== parts.note)
+        setField('set_comment', 'comment', joinComment(parts.energy, ni.value));
+    });
+    ni.addEventListener('keydown', function(ev){
+      if (ev.key === 'Enter') ni.blur();
+      else if (ev.key === 'Escape') { ev.preventDefault(); ni.value = parts.note; ni.blur(); }
+    });
+    more.appendChild(fieldRow(STATE.energyOn ? 'Note' : 'Comment', ni, true));
+  }
+
+  // Suggest from the genres you already use, matching the LAST '/' segment so
+  // a multi-genre value can be built one part at a time.
+  function paintGenreHints(input, wrap){
+    var old = wrap.querySelector('.auto');
+    if (old) old.remove();
+    var cut = input.value.lastIndexOf('/');
+    var seg = (cut >= 0 ? input.value.slice(cut + 1) : input.value).trim().toLowerCase();
+    if (!seg) return;
+    var hits = STATE.genres.filter(function(g){
+      return g.toLowerCase().indexOf(seg) >= 0 && g.toLowerCase() !== seg;
+    }).slice(0, 6);
+    if (!hits.length) return;
+    var box = document.createElement('div'); box.className = 'auto';
+    hits.forEach(function(g){
+      var b2 = document.createElement('button');
+      b2.type = 'button'; b2.textContent = g;
+      b2.addEventListener('mousedown', function(ev){
+        ev.preventDefault();
+        input.value = (cut >= 0 ? input.value.slice(0, cut + 1) : '') + g;
+        var o = wrap.querySelector('.auto'); if (o) o.remove();
+      });
+      box.appendChild(b2);
+    });
+    wrap.appendChild(box);
+  }
+
+  function paint(data){
+    var tr = data.track;
+    $('title').textContent = tr.title || '(untitled)';
+    $('artist').textContent = tr.artist || '';
+    $('meta').textContent = [tr.bpm ? tr.bpm + ' BPM' : '', tr.key,
+                             (tr.genres || []).join(' / ')].filter(Boolean).join('  ·  ');
+
+    loadWave(tr.path);
+    paintFields();
+    var b = $('banksBox'); b.innerHTML = '';
+    (data.banks || []).forEach(function(bank){
+      if (IGNORED.indexOf(bank.name) >= 0) return;
+      if (!(bank.tags || []).length) return;
+      var sec = document.createElement('div'); sec.className = 'bank';
+      sec.dataset.bank = bank.name;
+      var h = document.createElement('div'); h.className = 'bankName';
+      h.textContent = bankTitle(bank.name);
+      var wrap = document.createElement('div'); wrap.className = 'tags';
+      (bank.tags || []).forEach(function(tag){
+        var el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'tag' + (STATE.tags[tag.name] ? ' on' : '')
+                     + (STATE.pending[tag.name] ? ' pending' : '');
+        el.textContent = tag.name;
+        el.addEventListener('click', function(){ toggle(tag.name); });
+        wrap.appendChild(el);
+      });
+      sec.appendChild(h); sec.appendChild(wrap); b.appendChild(sec);
+    });
+
+    $('emptyBox').innerHTML = '';
+    $('nav').style.display = '';
+
+    // ── finishing the track ──
+    // ⚠ Stamps the DONE colour, which here is not "ready": tagging leaves the
+    // beatgrid outstanding and that is done in rekordbox, which is what marks
+    // it OK afterwards.
+    var done = STATE.doneColor, tri = STATE.triage || {};
+    var wrap = $('doneWrap'), btn = $('doneBtn'), left = $('triageLeft');
+    btn.style.setProperty('--lc', labelColor(done));
+    var col = (STATE.vals.color || '').trim().toUpperCase();
+    var waiting = !!tri.color && col === tri.color.toUpperCase();
+    var already = !!done && col === done.toUpperCase();
+    left.textContent = tri.color ? (tri.left || 0) + ' at ' + tri.color : '';
+    btn.disabled = false;
+    if (!done) { wrap.style.display = 'none'; }
+    else if (waiting) {
+      // ⚠ One gesture. Marking a track done is ALWAYS followed by moving
+      // on, so it is one button — and the next track is the next one
+      // still waiting, whatever Browse happens to have on screen.
+      wrap.style.display = '';
+      btn.textContent = done + ' ✓  ·  next ›';
+      btn.dataset.next = '1';
+      btn.onclick = function(){ guardDone(doneAndNext); };
+    } else if (already && tri.left) {
+      wrap.style.display = '';
+      btn.textContent = 'Next at ' + tri.color + ' ›';
+      btn.dataset.next = '';
+      btn.onclick = function(){ triageNext(STATE.id); };
+    } else {
+      // Anything else (a track you are only browsing): mark it and stay,
+      // exactly as before — moving on would take you somewhere you did not ask.
+      wrap.style.display = '';
+      btn.textContent = already ? '✓ ' + done : 'Mark ' + done + ' ✓';
+      btn.dataset.next = '';
+      btn.disabled = already;
+      btn.onclick = function(){
+        guardDone(function(){ setField('set_color', 'color', done); });
+      };
+    }
+    btn.dataset.base = btn.textContent;
+    showMissing();
+
+    paintPlay();
+
+    var n = data.queued || 0;
+    $('queued').textContent = n ? n + ' waiting to sync' : 'nothing waiting';
+    $('dot').style.display = n ? '' : 'none';
+    $('hint').textContent = 'tap to tag';
+  }
+
+  // ── what a track needs before it is done ───────────────────────────────
+  // Genre, rating, energy, and a tag in every bank shown here (the ignored
+  // ones never count). ⚠ Never a wall: the first press points at what is
+  // missing, the second marks it as it is — some tracks are finished without
+  // a mood, and that is your call.
+  function missingNow(){
+    var miss = [];
+    if (!STATE.id) return miss;
+    var gi = document.querySelector('[data-key="genre"] input');
+    var g = gi ? gi.value : (STATE.vals.genre || '');
+    if (!(g || '').trim()) miss.push({key: 'genre', label: 'genre'});
+    if (!(parseInt(STATE.vals.rating || 0, 10) > 0)) miss.push({key: 'rating', label: 'rating'});
+    if (STATE.energyOn && !splitComment(STATE.vals.comment).energy)
+      miss.push({key: 'energy', label: 'energy'});
+    ((LAST && LAST.banks) || []).forEach(function(b){
+      if (IGNORED.indexOf(b.name) >= 0 || !(b.tags || []).length) return;
+      if (!b.tags.some(function(x){ return STATE.tags[x.name]; }))
+        miss.push({key: 'bank:' + b.name, label: bankTitle(b.name).toLowerCase()});
+    });
+    return miss;
+  }
+
+  // Only once you have tried to finish this track, and only while it is
+  // missing: fill it in and the mark goes, and the button with it.
+  function showMissing(){
+    var on = !!STATE.id && STATE.check === STATE.id;
+    var miss = on ? missingNow() : [];
+    var keys = {};
+    miss.forEach(function(m){ keys[m.key] = true; });
+    [].forEach.call(document.querySelectorAll('.row[data-key]'), function(el){
+      el.classList.toggle('missing', !!keys[el.dataset.key]);
+    });
+    [].forEach.call(document.querySelectorAll('.bank[data-bank]'), function(el){
+      el.classList.toggle('missing', !!keys['bank:' + el.dataset.bank]);
+    });
+    var btn = $('doneBtn');
+    var anyway = on && miss.length > 0;
+    btn.classList.toggle('anyway', anyway);
+    if (btn.dataset.base)
+      btn.textContent = anyway ? (btn.dataset.next ? 'Mark anyway  ·  next ›' : 'Mark anyway ✓')
+                               : btn.dataset.base;
+  }
+
+  function guardDone(go){
+    var miss = missingNow();
+    if (miss.length && STATE.check !== STATE.id) {
+      STATE.check = STATE.id;
+      showMissing();
+      say('missing: ' + miss.map(function(m){ return m.label; }).join(', ')
+          + ' — again to mark anyway', 5000);
+      return;
+    }
+    STATE.check = null;
+    go();
+  }
+
+  function toggle(name){
+    if (!STATE.id) return;
+    // Flip it here FIRST: the queue is the slow, durable part, and a tag that
+    // waits for a round-trip before it lights up feels broken.
+    var on = !STATE.tags[name];
+    if (on) STATE.tags[name] = true; else delete STATE.tags[name];
+    STATE.pending[name] = true;
+    if (!markTag(name)) render();
+    showMissing();
+    fetch('/api/tagger/enqueue', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ops: [{op: on ? 'add_tag' : 'remove_tag',
+                                     track: STATE.id, tag: name}]})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        delete STATE.pending[name];
+        if (((j.skipped || []).length + (j.failed || []).length) > 0) {
+          if (on) delete STATE.tags[name]; else STATE.tags[name] = true;
+          STATE.sig = '';
+          say('not saved — it changed in rekordbox');
+          if (!markTag(name)) render();
+          return;
+        }
+        // ⚠ Clear the mark HERE, not after refresh() has been to the server
+        // and back. Waiting for a second round trip is what kept the dot
+        // sitting there long after the change had landed.
+        markTag(name);
+        refresh(true);
+      })
+      .catch(function(){
+        // ⚠ Revert. Leaving the chip lit told you a tag was saved that the
+        // server never received, and because the poll compares a signature
+        // that had not moved, nothing ever reconciled it — the phantom stayed
+        // for the rest of the session.
+        delete STATE.pending[name];
+        if (on) delete STATE.tags[name]; else STATE.tags[name] = true;
+        STATE.sig = '';
+        say('could not save — is the toolkit running?');
+        if (!markTag(name)) render();
+      });
+  }
+
+  var LAST = null;
+  function render(){ if (LAST) paint(LAST); }
+
+  // Mark it done and go on to the next track still waiting. The move waits
+  // for the save to be queued, so the count it comes back with is right.
+  function doneAndNext(){
+    var from = STATE.id, done = STATE.doneColor;
+    if (!from || !done) return;
+    $('doneBtn').disabled = true;
+    var saved = setField('set_color', 'color', done) || Promise.resolve();
+    saved.then(function(){ triageNext(from); }, function(){ triageNext(from); });
+  }
+
+  function triageNext(from){
+    fetch('/api/tagger/triage-next', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({from: from})})
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (!j.track) say('nothing left at ' + ((STATE.triage || {}).color || 'the start'));
+        refresh(true);
+        if (j.track) follow(from);
+      })
+      .catch(function(){ say('could not reach the toolkit'); refresh(true); });
+  }
+
+  // ⚠ Repaint ONE chip. paint() rebuilds every button, field and star, which
+  // throws away the very element under your cursor in the middle of a gesture
+  // — and it ran on every tap AND every second. Returns false if the chip is
+  // not on screen, so the caller can fall back to the full repaint.
+  function markTag(name){
+    var els = $('banksBox').getElementsByClassName('tag');
+    for (var i = 0; i < els.length; i++){
+      if (els[i].textContent === name){
+        els[i].classList.toggle('on', !!STATE.tags[name]);
+        els[i].classList.toggle('pending', !!STATE.pending[name]);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function refresh(force){
+    return fetch('/api/tagger/now').then(function(r){ return r.json(); }).then(function(j){
+      if (j.error) return;
+      if (j.ignoredBanks) IGNORED = j.ignoredBanks;
+      if (j.genres) STATE.genres = j.genres;
+      if (typeof j.energyInComment === 'boolean') STATE.energyOn = j.energyInComment;
+      STATE.doneColor = j.doneColor || '';
+      if (j.colorIds) STATE.slots = j.colorIds;
+      STATE.triage = j.triage || null;
+      if (j.playback) {
+        var pb = j.playback;
+        // ⚠ After a local seek the server keeps reporting the OLD position for
+        // up to ~1.4 s (its own pulse is 700 ms). Re-anchoring on that made the
+        // head jump back to where you had just dragged it away from.
+        var fresh = (performance.now() - (STATE.seekAt || 0)) > 2000;
+        // Reset the local clock only when the reading actually moved, so the
+        // head is not nudged backwards by a repeat of the same value.
+        if (fresh && (!STATE.play || pb.pos !== STATE.play.pos
+            || pb.playing !== STATE.play.playing)) {
+          STATE.play = {pos: pb.pos || 0, dur: pb.dur || 0, playing: !!pb.playing};
+          STATE.playAt = performance.now();
+        }
+        paintPlay();
+        // ⚠ Not while your finger is on it, nor just after: the player's own
+        // report lags a beat behind the slider and would drag it back.
+        if (typeof pb.vol === 'number'
+            && performance.now() - (STATE.volAt || 0) > 1500) {
+          STATE.vol = pb.vol;
+          paintVol();
+        }
+      }
+      if (j.held) paintHeld(j.held);
+      if (!j.track){
+        STATE.id = null; LAST = null;
+        paintEmpty(j.warming ? 'Loading your library…' : 'Nothing open',
+                   j.warming ? 'One moment.' : 'Open a track in the Tagger and it shows up here.');
+        return;
+      }
+      // ⚠ Only rebuild the tag map when the SERVER's picture actually changed.
+      // Rewriting it on every poll would undo an optimistic tick that is still
+      // in flight, making tags flicker back off under your finger.
+      var vals = j.values || {};
+      var sig = String(j.track.id) + '|' + (j.tags || []).join(',') + '|'
+              + (j.queued || 0) + '|' + ((j.triage || {}).left || 0) + '|'
+              + [vals.rating, vals.comment, vals.genre, vals.color].join('\u0001');
+      var changedTrack = String(j.track.id) !== String(STATE.id);
+      if (changedTrack) STATE.check = null;
+      var oldId = STATE.id;
+      var changed = force || changedTrack || sig !== STATE.sig;
+      if (changed){
+        if (changedTrack || !Object.keys(STATE.pending).length){
+          STATE.tags = {};
+          (j.tags || []).forEach(function(t){ STATE.tags[t] = true; });
+        }
+        STATE.base = j.base || {};
+        // Keep any field whose save has not settled yet: the server's answer
+        // is older than what you just did.
+        var busy = STATE.inflight || {};
+        Object.keys(busy).forEach(function(k){
+          if (busy[k] > 0) vals[k] = STATE.vals[k];
+        });
+        STATE.vals = vals;
+        STATE.id = String(j.track.id);
+        STATE.sig = sig;
+      }
+      LAST = j;
+      // ⚠ Never redraw under a field you are typing in: the poll runs every
+      // second and rebuilding the inputs would eat the half-typed word (and
+      // the caret with it). The blur handler writes the value, so nothing is
+      // lost by waiting.
+      if (STATE.editing && !changedTrack) return;
+      // ⚠ The track DID change and a field is focused: commit what is in it
+      // to the OLD track before the repaint destroys it. WebKit fires no blur
+      // on a removed element, so otherwise the text simply disappeared.
+      if (STATE.editing && changedTrack) commitFocused(oldId);
+      // ⚠ Nothing moved — so do not repaint. This poll runs every second
+      // and rebuilt every chip, star and field on each one: churn you cannot
+      // see but can feel, because a rebuild throws away the button your
+      // cursor is already resting on.
+      if (!changed) return;
+      paint(j);
+      // ⚠ #body scrolls, not the window: `window.scrollTo` here was a no-op
+      // and a new track opened wherever the last one had been left.
+      if (changedTrack) $('body').scrollTop = 0;
+    }).catch(function(){});
+  }
+
+  // ── the waveform ────────────────────────────────────────────────────────
+  // Read, not computed: rekordbox already analysed it, so this is the exact
+  // shape the CDJs show. Three bands, RGB — bass red, mids green, highs blue.
+  // ⚠ Still red–green–blue, because that mapping is the one the CDJs teach
+  // you and it has to stay readable at a glance — but pulled off the pure
+  // primaries, which on a white strip fight each other. Same three meanings,
+  // one family of colours. The pale set is the part you have not reached yet:
+  // a second colour rather than transparency, because three translucent bands
+  // stacked go muddy where they overlap.
+  // ⚠ Two sets, one per appearance. On white the bands are deep and the part
+  // still to come is a pale tint; on the booth's near-black they are bright
+  // and what is still to come is the same colour sunk into the dark — each
+  // worked out against its own ground, never an alpha, because three
+  // translucent bands stacked go muddy where they overlap.
+  var WAVE_LIGHT = {
+    band: {low: '#e4573f', mid: '#1f9e6b', high: '#3b6fd4'},
+    pale: {low: '#f3bdb0', mid: '#b4ddc8', high: '#bccef0'},
+    lift: {low: '#f08a6f', mid: '#4dc08d', high: '#7396e4'},
+    paleLift: {low: '#f9d9d1', mid: '#d2ebe0', high: '#dae6f7'},
+    seam: 'rgba(255,255,255,.55)', head: 'rgba(29,29,31,.85)'};
+  var WAVE_DARK = {
+    band: {low: '#ff6b52', mid: '#3fcf8e', high: '#7196ff'},
+    pale: {low: '#763930', mid: '#25634a', high: '#3a4b79'},
+    lift: {low: '#ff927d', mid: '#72dcaa', high: '#98b1ff'},
+    paleLift: {low: '#8d4136', mid: '#297555', high: '#435890'},
+    seam: 'rgba(18,20,24,.6)', head: 'rgba(233,235,240,.95)'};
+  var DARK_Q = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+  function wavePal(){ return (DARK_Q && DARK_Q.matches) ? WAVE_DARK : WAVE_LIGHT; }
+  if (DARK_Q) {
+    var redraw = function(){ drawWave(); };
+    if (DARK_Q.addEventListener) DARK_Q.addEventListener('change', redraw);
+    else if (DARK_Q.addListener) DARK_Q.addListener(redraw);
+  }
+
+  // Energy 1..10, cool to hot — the same scale as the app.
+  var ENERGY_RAMP = ['#3d6fe0', '#4a86e6', '#3fa9d6', '#3fc4b0', '#55c574',
+                     '#a3cc4a', '#e8c341', '#f39a3c', '#f2723f', '#ef4f4f'];
+  // rekordbox's eight label slots, in its own order.
+  var LABEL_SLOT_COLORS = ['#ef6fb5', '#ef5a5a', '#f39a3c', '#eccf4b',
+                           '#55c574', '#41c5d5', '#5b87ff', '#a97cf3'];
+  function labelColor(name){
+    var i = ((STATE.slots || {})[(name || '').trim()]) || 0;
+    return LABEL_SLOT_COLORS[i - 1] || '';
+  }
+  // "TYPE OF SET" → "Type of set".
+  function bankTitle(name){
+    name = String(name || '');
+    if (name !== name.toUpperCase()) return name;
+    var low = name.toLowerCase();
+    return low.charAt(0).toUpperCase() + low.slice(1);
+  }
+  var WAVE = {path: null, bands: null, peaks: null};
+
+  function loadWave(path){
+    if (!path || path === WAVE.path) return;
+    WAVE.path = path; WAVE.bands = null; WAVE.peaks = null;
+    drawWave();
+    fetch('/api/peaks?path=' + encodeURIComponent(path))
+      .then(function(r){ return r.json(); })
+      .then(function(j){
+        if (WAVE.path !== path) return;        // moved on already
+        WAVE.bands = j.bands || null; WAVE.peaks = j.peaks || null;
+        drawWave();
+      }).catch(function(){});
+  }
+
+  // Where the head is NOW. The server's reading is up to a second old, so it
+  // is carried forward locally from the moment it arrived — no reliance on the
+  // two clocks agreeing, just on how long ago we heard.
+  function playedFrac(){
+    var p = STATE.play;
+    if (!p || !p.dur) return 0;
+    var pos = p.pos;
+    if (p.playing) pos += (performance.now() - STATE.playAt) / 1000;
+    return Math.max(0, Math.min(1, pos / p.dur));
+  }
+
+  function peak(v, from, to){
+    var m = 0;
+    for (var j = from; j < to && j < v.length; j++) if (v[j] > m) m = v[j];
+    return m;
+  }
+
+  // ⚠ One value per column, then a 3-tap mean. At this width the raw buckets
+  // tremble, and the eye reads tremble as noise rather than as music — the
+  // smoothing drops the jitter and keeps the hits.
+  function envelope(arr, cols, top, amp){
+    var n = arr.length, out = new Array(cols), i, pass;
+    for (i = 0; i < cols; i++){
+      var a = Math.floor(i * n / cols);
+      var b = Math.max(Math.floor((i + 1) * n / cols), a + 1);
+      out[i] = peak(arr, a, b) / top * amp;
+    }
+    // ⚠ Two passes, a gentle five-tap between them: one pass still leaves a
+    // sawtooth, because each column keeps the LOUDEST of the couple of
+    // buckets it covers. A kick still reads as a kick.
+    for (pass = 0; pass < 2; pass++){
+      var prev = out.slice();
+      for (i = 0; i < cols; i++){
+        out[i] = ((i > 0 ? prev[i - 1] : prev[i]) + prev[i] * 2
+                  + (i < cols - 1 ? prev[i + 1] : prev[i])) / 4;
+      }
+    }
+    return out;
+  }
+
+  // Mirrored around the centre line and drawn through the MIDPOINTS between
+  // samples: consecutive quadratics meet there without a corner, which is what
+  // makes the shape look poured instead of stacked out of little bars.
+  function ribbon(g, env, w, mid, rim){
+    var n = env.length, step = w / (n - 1), i, x;
+    g.beginPath();
+    g.moveTo(0, mid - env[0]);
+    for (i = 0; i < n - 1; i++){
+      x = i * step;
+      g.quadraticCurveTo(x, mid - env[i], x + step / 2,
+                         mid - (env[i] + env[i + 1]) / 2);
+    }
+    g.lineTo(w, mid - env[n - 1]);
+    g.lineTo(w, mid + env[n - 1]);
+    for (i = n - 1; i > 0; i--){
+      x = i * step;
+      g.quadraticCurveTo(x, mid + env[i], x - step / 2,
+                         mid + (env[i] + env[i - 1]) / 2);
+    }
+    g.closePath();
+    g.fill();
+    if (rim) g.stroke();
+  }
+
+  function drawWave(){
+    var cv = $('wave'), dpr = window.devicePixelRatio || 1;
+    var w = cv.clientWidth, h = cv.clientHeight;
+    if (!w) return;
+    // ⚠ BOTH dimensions. Checking only the width left the backing store at
+    // its old height whenever the strip changed shape, and the drawing then
+    // landed off the bottom of the buffer.
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) {
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+    }
+    var g = cv.getContext('2d');
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+
+    var b = WAVE.bands;
+    var has = !!(b && b.low && b.low.length) || !!(WAVE.peaks && WAVE.peaks.length);
+    cv.classList.toggle('empty', !has);
+    if (!has) return;
+
+    var cols = Math.max(2, Math.floor(w / 2));
+    var mid = h / 2, amp = (h - 10) / 2, played = playedFrac() * w;
+
+    var layers;
+    if (b && b.low && b.low.length) {
+      var top = b.max || 1;
+      layers = [['low', envelope(b.low, cols, top, amp)],
+                ['mid', envelope(b.mid, cols, top, amp)],
+                ['high', envelope(b.high, cols, top, amp)]];
+      // ⚠ Biggest band BEHIND. Painted in a fixed order the loudest one
+      // simply buries the other two and the colour stops telling you
+      // anything. The old code decided this column by column, which a
+      // continuous ribbon cannot do — so it is decided once, by total area,
+      // which lands the same way round nearly everywhere (the bass is usually
+      // the body, and the mids and highs read on top of it).
+      layers.sort(function(p, q){
+        var sp = 0, sq = 0, i;
+        for (i = 0; i < cols; i++) { sp += p[1][i]; sq += q[1][i]; }
+        return sq - sp;
+      });
+    } else {
+      layers = [['flat', envelope(WAVE.peaks, cols, 1, amp)]];
+    }
+
+    // Everything pale first, then the same shapes again clipped to the part
+    // you have heard. ⚠ Clipping, not per-bar alpha: the boundary lands on
+    // the playhead itself instead of snapping to the nearest bar.
+    // ⚠ A gradient, not a flat fill. Where a band runs loud for a whole
+    // phrase its shape is a rectangle, and three flat rectangles stacked read
+    // as a slab rather than as sound; darkening towards the centre line gives
+    // each one a body and lets the one behind show through at its edge.
+    // ⚠ The gradient is scaled to the band's OWN height, not to the strip.
+    // A band that runs loud fills most of the strip, and a gradient spread
+    // over the whole height is then almost flat inside it — which is how the
+    // loudest band came out looking like a slab of colour.
+    var P = wavePal();
+    function shade(key, tall, pal){
+      var core = pal ? (P.pale[key] || '#dfe1e4') : (P.band[key] || '#5f6368');
+      var edge = pal ? (P.paleLift[key] || '#eff0f2') : (P.lift[key] || '#8a8f94');
+      var grad = g.createLinearGradient(0, mid - tall, 0, mid + tall);
+      grad.addColorStop(0, edge);
+      grad.addColorStop(0.5, core);
+      grad.addColorStop(1, edge);
+      return grad;
+    }
+    function paint(pal){
+      for (var i = 0; i < layers.length; i++){
+        var env = layers[i][1], tall = 1, k;
+        for (k = 0; k < env.length; k++) if (env[k] > tall) tall = env[k];
+        g.fillStyle = shade(layers[i][0], tall, pal);
+        // A hairline of the background between the layers, so they read as
+        // three shapes laid over each other instead of one flat mass.
+        g.strokeStyle = P.seam;
+        g.lineWidth = 1;
+        ribbon(g, env, w, mid, true);
+      }
+    }
+    paint(true);
+    if (played > 0.5) {
+      g.save();
+      g.beginPath(); g.rect(0, 0, played, h); g.clip();
+      paint(false);
+      g.restore();
+    }
+
+    var px = Math.max(0, Math.min(w - 1, played));
+    g.fillStyle = P.head;
+    g.fillRect(px - 0.5, 0, 1.6, h);
+  }
+
+  // Click or drag anywhere on it to jump. The popover has no audio of its own,
+  // so this is a request the Tagger carries out — same as next/previous.
+  function seekAt(ev){
+    var cv = $('wave'), r = cv.getBoundingClientRect();
+    if (!r.width || !STATE.play || !STATE.play.dur) return;
+    var frac = Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width));
+    STATE.play.pos = frac * STATE.play.dur;      // move it now, ask after
+    STATE.playAt = performance.now();
+    STATE.seekAt = performance.now();
+    drawWave();
+    fetch('/api/tagger/seek', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({frac: frac})}).catch(function(){});
+  }
+  var scrubbing = false;
+  $('wave').addEventListener('mousedown', function(ev){ scrubbing = true; seekAt(ev); });
+  window.addEventListener('mousemove', function(ev){ if (scrubbing) seekAt(ev); });
+  window.addEventListener('mouseup', function(){ scrubbing = false; });
+
+  setInterval(drawWave, 100);          // carry the head forward between polls
+
+  // Moving through the queue is a REQUEST to the Tagger: it owns the list and
+  // it is what plays the audio, so it does the moving and the popover simply
+  // follows on its next poll.
+  // ⚠ The glyph says what the BROWSER is doing, because that is where the
+  // audio is. It arrives on the pulse, so a press flips it optimistically and
+  // the truth lands a moment later — see the click handler.
+  function paintPlay(){
+    var b = $('playBtn');
+    if (!b) return;
+    var on = !!(STATE.play && STATE.play.playing);
+    b.textContent = on ? '❙❙' : '▶';
+    b.title = on ? 'Pause' : 'Play';
+  }
+
+  function nav(dir){
+    var from = STATE.id;
+    fetch('/api/tagger/nav', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({dir: dir})})
+      .then(function(){ follow(from); }).catch(function(){});
+  }
+
+  // ⚠ After ‹ › the browser moves within milliseconds, but this popover only
+  // looked again on its next one-second poll — so the new track appeared up to
+  // a second late, and that second is what made moving on feel slow. Look
+  // again quickly until the track has changed, then go back to the slow beat.
+  function follow(from){
+    var until = performance.now() + 2500;
+    function tick(){
+      Promise.resolve(refresh(true)).then(function(){
+        if (STATE.id !== from || performance.now() > until) return;
+        setTimeout(tick, 70);
+      }, function(){});
+    }
+    setTimeout(tick, 40);
+  }
+  // ── volume ─────────────────────────────────────────────────────────────
+  // Sent as you drag, but no more than one request every 60 ms, and the last
+  // position always goes out — a throttle that dropped the final value would
+  // leave the player a notch away from where you let go.
+  var VOL = {sentAt: 0, timer: null};
+  function paintVol(){
+    var el = $('vol');
+    var v = (typeof STATE.vol === 'number') ? STATE.vol : 1;
+    el.value = v;
+    el.style.setProperty('--p', (v * 100) + '%');
+  }
+  function sendVol(){
+    VOL.sentAt = performance.now();
+    fetch('/api/tagger/volume', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({vol: STATE.vol})}).catch(function(){});
+  }
+  $('vol').addEventListener('input', function(){
+    STATE.vol = parseFloat(this.value);
+    STATE.volAt = performance.now();
+    this.style.setProperty('--p', (STATE.vol * 100) + '%');
+    clearTimeout(VOL.timer);
+    var wait = 60 - (performance.now() - VOL.sentAt);
+    if (wait <= 0) sendVol(); else VOL.timer = setTimeout(sendVol, wait);
+  });
+
+  // Called by the menu bar each time the popover opens: the page stays loaded
+  // between opens, and only the data needs to be fresh.
+  window.__shown = function(){ refresh(true); };
+
+  // Quit closes the whole toolkit — app, server and icon. Only inside the menu
+  // bar icon, which is what carries it out; in a browser tab there is no one
+  // to ask.
+  (function(){
+    var h = window.webkit && window.webkit.messageHandlers;
+    if (!h || !h.quit) return;
+    var b = $('quitBtn');
+    b.hidden = false;
+    b.addEventListener('click', function(){ h.quit.postMessage(1); });
+  })();
+
+  // ── the popover takes the height it needs ─────────────────────────────
+  // ⚠ Genre and note sit below the tag banks, and at a fixed 700 px they were
+  // below the fold: every track that needed a genre needed a scroll first.
+  // The page measures what it holds and the menu bar sizes the popover to it,
+  // up to the height of the screen — only past that does anything scroll.
+  var SIZE = {last: 0, raf: 0};
+  function naturalHeight(){
+    var main = $('body'), cs = getComputedStyle(main);
+    var content = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    [].forEach.call(main.children, function(c){ content += c.offsetHeight; });
+    // Everything that is not the scrolling middle, plus what the middle holds.
+    return document.body.offsetHeight - main.clientHeight + content;
+  }
+  function reportSize(){
+    SIZE.raf = 0;
+    var h = Math.ceil(naturalHeight()) + 4;
+    if (Math.abs(h - SIZE.last) < 3) return;
+    SIZE.last = h;
+    try { window.webkit.messageHandlers.size.postMessage(h); } catch (e) {}
+  }
+  new MutationObserver(function(){
+    if (!SIZE.raf) SIZE.raf = requestAnimationFrame(reportSize);
+  }).observe(document.body, {childList: true, subtree: true, attributes: true,
+                              attributeFilter: ['style', 'class']});
+
+  $('prevBtn').addEventListener('click', function(){ nav(-1); });
+  $('nextBtn').addEventListener('click', function(){ nav(1); });
+  $('playBtn').addEventListener('click', function(){
+    // ⚠ Flip it HERE. The player is in the browser and its answer comes back
+    // on the pulse, so a button that waited for it would sit wrong for up to a
+    // second and read as a missed press. `seekAt` is the same "I just changed
+    // something locally" clock the playhead drag uses: it keeps the poll from
+    // overwriting this with the server's older picture.
+    if (STATE.play) STATE.play.playing = !STATE.play.playing;
+    STATE.playAt = performance.now();
+    STATE.seekAt = performance.now();
+    paintPlay();
+    fetch('/api/tagger/play', {method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'}).catch(function(){});
+  });
+
+  refresh(true);
+  setInterval(refresh, 1000);
+})();
+</script>
+</body>
+</html>

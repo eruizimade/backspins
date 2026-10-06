@@ -1,0 +1,13 @@
+# What Backspin needs. Running from source, convertidor.py installs these into
+# a local .venv by itself; this file is for packaging (backspin.spec) and for
+# anyone who prefers to manage the environment themselves.
+mutagen>=1.47
+sqlcipher3-wheels>=0.5
+pyrekordbox==0.4.4
+numpy
+send2trash; sys_platform != "darwin"
+# The desktop window (desktop.py). Without it the app opens in a browser.
+pywebview>=5
+# The menu bar icon on macOS.
+pyobjc-framework-Cocoa; sys_platform == "darwin"
+pyobjc-framework-WebKit; sys_platform == "darwin"
