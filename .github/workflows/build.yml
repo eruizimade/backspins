@@ -35,6 +35,12 @@ jobs:
           pip install -r requirements.txt pyinstaller
       - name: Python files compile
         run: python -m compileall -q .
+      - name: Stamp the version
+        if: github.ref_type == 'tag'
+        shell: bash
+        # The app learns its own version here (version.py), which is how it
+        # can tell when a newer release is out.
+        run: echo "VERSION = '${GITHUB_REF_NAME#v}'" > version.py
       - name: Package
         env:
           BACKSPINS_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || '0.0.0' }}

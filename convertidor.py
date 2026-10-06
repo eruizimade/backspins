@@ -1743,6 +1743,9 @@ class Handler(BaseHTTPRequestHandler):
             # a page holds, the less it can leak.
             cfg = prefs.load()
             self._json(cfg)
+        elif path == '/api/update':
+            import updates
+            self._json(updates.status())
         elif path == '/api/settings/context':
             # What the Settings screen offers to choose from: the library it
             # found, the colour labels and MyTag groups that exist, and what
@@ -2954,6 +2957,20 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({'error': str(e)[:300]}, 400)
 
+        elif path == '/api/update/check':
+            import updates
+            self._json(updates.check())
+
+        elif path == '/api/update/open':
+            # The download page, in the browser — the URL from our own
+            # status, never one the page sends.
+            import updates
+            if data.get('page') == 'issues':
+                webbrowser.open('https://github.com/%s/issues/new' % updates.REPO)
+            else:
+                webbrowser.open(updates.status()['url'])
+            self._json({'ok': True})
+
         elif path == '/api/access/open':
             import access
             self._json({'ok': access.open_pane(str(data.get('pane') or ''))})
@@ -3509,6 +3526,9 @@ def main():
     # versions (rekordbox XML + every table as JSON) that outlive the key.
     import library_backup
     library_backup.start()
+    # Is there a newer Backspins? (updates.py; off with check_updates.)
+    import updates
+    updates.start()
 
     httpd = None
     port = args.port

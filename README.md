@@ -47,6 +47,9 @@ The first time it opens, a short animated tour shows how it all fits together
 The interface is in **English and Spanish** (it follows your system language;
 change it in **Settings**).
 
+Backspins checks for a newer version now and then (Settings → General; it only reads the
+latest release number from GitHub) and offers it in the sidebar.
+
 ## Your words, not ours
 
 Backspins works with your own rekordbox vocabulary. It works out which MyTag

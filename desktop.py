@@ -19,6 +19,7 @@ the app needs, chosen by its first switch:
 From source the same file works: `python3 desktop.py`.
 """
 
+import json
 import multiprocessing
 import os
 import subprocess
@@ -139,6 +140,8 @@ def smoke():
             print('guard:', e.code)
             if e.code != 403:
                 return 1
+        with urllib.request.urlopen(url + '/api/update', timeout=10) as r:
+            print('version:', json.loads(r.read().decode('utf-8')).get('version'))
         with urllib.request.urlopen(url + '/', timeout=10) as r:
             page = r.read()
             print('page:', r.status, len(page), 'bytes')

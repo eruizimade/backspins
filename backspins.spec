@@ -28,6 +28,10 @@ for pkg in ('pyrekordbox', 'sqlcipher3', 'webview'):
 hidden += collect_submodules('mutagen') + ['send2trash', 'tkinter', 'tkinter.filedialog']
 
 mac = sys.platform == 'darwin'
+# The version the release workflow wrote into version.py ('dev' from source).
+import re as _re
+_v = _re.search(r"^VERSION = '([^']*)'", open(os.path.join(HERE, 'version.py')).read(), _re.M).group(1)
+VER = _v if _v[:1].isdigit() else '0.0.0'
 MUSIC = ('Backspins reads your music files here to draw their waveforms, play them and check their quality. They never leave this computer.')
 icon = os.path.join(HERE, 'assets', 'backspins.icns' if mac else 'backspins.ico')
 
@@ -39,7 +43,7 @@ exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='Backspins',
 coll = COLLECT(exe, a.binaries, a.datas, name='Backspins')
 if mac:
     app = BUNDLE(coll, name='Backspins.app', icon=icon, bundle_identifier='app.backspins.mac',
-                 info_plist={'CFBundleShortVersionString': os.environ.get('BACKSPINS_VERSION', '0.1.0'),
+                 info_plist={'CFBundleShortVersionString': VER,
                              'NSHighResolutionCapable': True,
                              'LSApplicationCategoryType': 'public.app-category.music',
                              'NSAppTransportSecurity': {'NSAllowsLocalNetworking': True},

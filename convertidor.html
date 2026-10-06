@@ -1719,7 +1719,7 @@
   .stCard h2 + .stRowS, .stCard .stNote + .stRowS{border-top:0}
   .stL{font-size:14px;font-weight:550;min-width:0}
   .stL small{display:block;font-size:12.5px;font-weight:400;color:var(--dim);margin-top:2px}
-  .stL small.bad{color:var(--err-ink)}
+  .stL small.bad{color:var(--err-ink)} .stL small.good{color:var(--ok-ink);font-weight:600}
   .stRowS > select{width:auto;min-width:200px;max-width:280px}
   .stCtl{display:flex;gap:8px;align-items:center;flex:0 1 420px;min-width:220px}
   .stCtl input{flex:1;min-width:0}
@@ -1728,7 +1728,20 @@
   .stFix{display:flex;align-items:center;gap:8px;margin:8px 0}
   .stFix input{flex:1;min-width:0} .stFix span{color:var(--faint)}
   #setFixAdd{margin-top:8px}
-  .stAdv summary{cursor:pointer;font-size:13px;color:var(--dim);padding:8px 0 2px}
+  .stTabs{margin:0 0 14px}
+  .railHealth{display:flex;align-items:center;gap:6px}
+  .railHealth .n{margin-left:auto}
+  .railSettings{margin-top:6px}
+  .stIntro{color:var(--dim);margin:-8px 0 12px;font-size:13.5px}
+  .stJump{position:sticky;top:calc(var(--deck-h, 0px) + 8px);z-index:5;display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;
+          padding:6px;border-radius:12px;background:color-mix(in srgb,var(--bg) 82%,transparent);
+          -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+  .stJump a{font-size:12.5px;font-weight:600;color:var(--dim);text-decoration:none;padding:5px 11px;border-radius:99px;border:1px solid var(--line)}
+  .stJump a:hover{color:var(--text);border-color:var(--line2)}
+  .stCard{scroll-margin-top:calc(var(--deck-h, 0px) + 64px)}
+  .stSub{font-size:14px;margin:18px 0 4px;padding-top:14px;border-top:1px solid var(--line)}
+  .stBtns{display:flex;gap:8px;flex:none}
+    .stAdv summary{cursor:pointer;font-size:13px;color:var(--dim);padding:8px 0 2px}
   .stSwitch{position:relative;display:inline-block;width:44px;height:26px;margin:0;flex:none}
   .stSwitch input{opacity:0;width:0;height:0;position:absolute}
   .stSwitch i{position:absolute;inset:0;border-radius:99px;background:var(--line2);transition:background .2s;cursor:pointer}
@@ -1983,23 +1996,33 @@
             class="nl">Sets</span></button>
     <div class="railHead">Maintenance</div>
     <button id="tabConv" class="navi tool" type="button"><span class="nl">Import</span></button>
-    <button id="tabSanity" class="navi tool" type="button"><span class="nl">Health</span><span
-            class="sanRing" id="sanRing"></span><span class="n" id="navHealthN"></span></button>
     <button id="tabTeach" class="navi tool" type="button"><span class="nl">Teach</span></button>
-    <button id="tabBackups" class="navi tool" type="button"><span class="nl">Your data</span><span
-            class="n" id="navBackupsN"></span></button>
-    <button id="tabSettings" class="navi tool" type="button"><span class="nl">Settings</span></button>
+    <!-- Health is a group, like Maintenance: one entry per check. -->
+    <div class="railHead railHealth"><span>Health</span><span class="sanRing" id="sanRing"></span><span
+         class="n" id="navHealthN"></span></div>
+    <button class="navi tool" type="button" data-san="dupes"><span class="nl">Duplicates</span></button>
+    <button class="navi tool" type="button" data-san="folders"><span class="nl">Duplicate folders</span></button>
+    <button class="navi tool" type="button" data-san="qual"><span class="nl">Quality</span></button>
+    <button class="navi tool" type="button" data-san="compat"><span class="nl">Compatibility</span></button>
+    <button class="navi tool" type="button" data-san="tags"><span class="nl">Shop tags</span></button>
+    <button class="navi tool" type="button" data-san="art"><span class="nl">Artwork</span></button>
+    <!-- Kept for what is wired to them; the rail shows the entries above. -->
+    <button id="tabSanity" class="hidden" type="button"></button>
+    <button id="tabBackups" class="hidden" type="button"></button>
   </div>
   <div class="railFoot">
     <button class="railUpdate hidden" id="railUpdate" type="button"></button>
+    <button class="railUpdate railNew hidden" id="railNew" type="button"></button>
+    <button type="button" class="railHow" id="railHow"><i>?</i>How it works</button>
     <div class="rbState" id="rbState"><i></i><div><span id="rbStateT">rekordbox</span><small
          id="rbStateS"></small></div></div>
-    <button type="button" class="railHow" id="railHow"><i>?</i>How it works</button>
     <div class="themepick" id="themePick" title="Appearance">
       <button type="button" data-theme="auto" title="Follow the Mac">Auto</button>
       <button type="button" data-theme="light" title="Light">Light</button>
       <button type="button" data-theme="dark" title="Dark">Dark</button>
     </div>
+    <button id="tabSettings" class="navi tool railSettings" type="button"><span class="nl">Settings</span><span
+            class="n" id="navBackupsN"></span></button>
   </div>
 </nav>
 <div class="stage">
@@ -2132,8 +2155,9 @@
   <!-- ══════════════ DUPLICATS ══════════════ -->
   <!-- ══════════════ SANITY (capçalera del grup) ══════════════ -->
   <div id="viewSanity" class="hidden">
-    <div class="sanTabs" style="margin-bottom:12px">
+    <div class="sanTabs hidden" style="margin-bottom:12px">
       <button id="subDupes" class="on" type="button">Duplicates</button>
+      <button id="subFolders" type="button">Duplicate folders</button>
       <button id="subQual" type="button">Quality</button>
       <button id="subCompat" type="button">Compatibility</button>
         <button id="subTags" type="button">Shop tags</button>
@@ -2142,6 +2166,16 @@
     <section class="card" style="margin-bottom:12px">
       <div id="sanOverview" class="sanGrid"></div>
       <p class="note" id="sanNote" style="margin-top:10px"></p>
+    </section>
+  </div>
+
+  <div id="viewFolders" class="hidden">
+    <!-- Folders of music already in the library that rekordbox never plays
+         (folder_dupes.py). Everything goes to the Bin, after a second look. -->
+    <section class="card dataCard" id="fdCard">
+      <div class="dataHead"><h2>Duplicate folders</h2>
+        <button class="ghost" id="fdAgain" type="button">Look for them</button></div>
+      <div id="fdBody" class="small"><span>Folders of music that rekordbox never plays and that is already in your library: the originals a conversion set aside, an old backup, a downloader's "processed" folder.</span></div>
     </section>
   </div>
 
@@ -2626,6 +2660,7 @@
        What library_backup.py keeps, and when it last managed to. Read-only
        except for "Back up now": restoring is done by hand, on purpose. -->
   <div id="viewBackups" class="hidden">
+    <div class="segmented stTabs"><button type="button" data-go="tabSettings">Settings</button><button type="button" data-go="tabBackups" class="on">Your data</button></div>
     <!-- Access (access.py) and storage (storage.py): what the app can reach,
          and everything it keeps on disk, in bytes. -->
     <section class="card dataCard" id="acCard">
@@ -2637,13 +2672,6 @@
       <div class="dataHead"><h2>Storage</h2>
         <button class="ghost" id="stOpenApp" type="button">Show app folder</button></div>
       <div id="stBody" class="small">Measuring…</div>
-    </section>
-    <!-- Folders of music already in the library that rekordbox never plays
-         (folder_dupes.py). Everything goes to the Bin, after a second look. -->
-    <section class="card dataCard" id="fdCard">
-      <div class="dataHead"><h2>Duplicate folders</h2>
-        <button class="ghost" id="fdAgain" type="button">Look for them</button></div>
-      <div id="fdBody" class="small"><span>Folders of music that rekordbox never plays and that is already in your library: the originals a conversion set aside, an old backup, a downloader's "processed" folder.</span></div>
     </section>
     <section class="card" style="margin-bottom:12px">
       <div class="bkTop">
@@ -2666,26 +2694,39 @@
   </div>
 
   <!-- ══════════════ SETTINGS ══════════════
-       Every setting in settings.py that a person would change, on one screen.
-       Each control saves the moment it changes (POST /api/settings); nothing
-       here needs a Save button or a restart. -->
+       Every setting in settings.py that a person would change, on one screen,
+       in the order you would think of them, each section saying what it is
+       for. Each control saves the moment it changes (POST /api/settings). -->
   <div id="viewSettings" class="hidden">
+    <div class="segmented stTabs"><button type="button" data-go="tabSettings" class="on">Settings</button><button type="button" data-go="tabBackups">Your data</button></div>
     <div class="stHead"><h1>Settings</h1><span class="stSaved" id="stSaved"></span></div>
+    <p class="stIntro">Everything here is saved the moment you change it.</p>
+    <nav class="stJump" id="stJump">
+      <a href="#stGeneral">General</a><a href="#stLibrary">Library</a><a href="#stTagging">Tagging</a>
+      <a href="#stVocab">Vocabulary</a><a href="#stImport">Import</a><a href="#stBackups">Backups</a><a href="#stHelp">Help</a>
+    </nav>
 
-    <section class="card stCard">
-      <h2>Appearance</h2>
-      <div class="stRowS"><div class="stL">Theme<small>Auto follows your computer.</small></div>
-        <div class="segmented" id="setTheme">
-          <button type="button" data-v="auto">Auto</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button>
-        </div></div>
+    <section class="card stCard" id="stGeneral">
+      <h2>General</h2>
+      <p class="stNote">How Backspins looks and talks, and keeping it up to date.</p>
       <div class="stRowS"><div class="stL">Language<small>The screens, not your tags or titles.</small></div>
         <div class="segmented" id="setLang" translate="no">
           <button type="button" data-v="en">English</button><button type="button" data-v="es">Español</button>
         </div></div>
+      <div class="stRowS"><div class="stL">Theme<small>Auto follows your computer.</small></div>
+        <div class="segmented" id="setTheme">
+          <button type="button" data-v="auto">Auto</button><button type="button" data-v="light">Light</button><button type="button" data-v="dark">Dark</button>
+        </div></div>
+      <div class="stRowS"><div class="stL">Version<small id="setVer">…</small></div>
+        <div class="stBtns"><button class="ghost" id="setUpdCheck" type="button">Check now</button>
+          <button id="setUpdGet" type="button" class="hidden">Download</button></div></div>
+      <div class="stRowS"><div class="stL">Check for updates automatically<small>Every few hours Backspins asks GitHub for the latest version number. Nothing about you is sent.</small></div>
+        <label class="stSwitch"><input type="checkbox" id="setUpdAuto" data-key="check_updates"><i></i></label></div>
     </section>
 
-    <section class="card stCard">
-      <h2>rekordbox library</h2>
+    <section class="card stCard" id="stLibrary">
+      <h2>Your rekordbox library</h2>
+      <p class="stNote">Backspins reads your library from a copy, and writes to it only while rekordbox is closed — after a backup.</p>
       <div class="stRowS"><div class="stL">Database<small id="setLibState">…</small></div>
         <div class="stCtl"><input type="text" id="setLibrary" spellcheck="false" placeholder="found automatically">
           <button class="ghost" id="setLibAuto" type="button">Find it for me</button></div></div>
@@ -2695,22 +2736,22 @@
       </details>
     </section>
 
-    <section class="card stCard">
-      <h2>Tagging workflow</h2>
-      <p class="stNote">rekordbox colour labels for each step. Choose the ones you use.</p>
-      <div class="stRowS"><div class="stL">New music arrives as<small>Imported tracks get it, and the Inbox opens on it.</small></div>
+    <section class="card stCard" id="stTagging">
+      <h2>Tagging</h2>
+      <p class="stNote">Each step of tagging is a rekordbox colour label: new music comes in with one, gets another once you have tagged it, and a third when it is ready to play. Choose the labels you use.</p>
+      <div class="stRowS"><div class="stL">1 · New music arrives as<small>Imported tracks get it, and the Inbox opens on it.</small></div>
         <select class="sel" id="setImport" data-key="import_color"></select></div>
-      <div class="stRowS"><div class="stL">Tagged, beatgrid to check<small>What "Mark … · next" stamps. Empty: the ready colour.</small></div>
+      <div class="stRowS"><div class="stL">2 · Tagged, beatgrid to check<small>What "Mark … · next" stamps. Empty: the ready colour.</small></div>
         <select class="sel" id="setDone" data-key="done_color"></select></div>
-      <div class="stRowS"><div class="stL">Ready to play<small>Sets only offers these. Empty: every track counts.</small></div>
+      <div class="stRowS"><div class="stL">3 · Ready to play<small>Sets only offers these. Empty: every track counts.</small></div>
         <select class="sel" id="setReady" data-key="ready_color"></select></div>
       <div class="stRowS"><div class="stL">Energy in the comment<small>Reads "6 - dark roller" as energy 6 and the note "dark roller".</small></div>
         <label class="stSwitch"><input type="checkbox" id="setEnergy" data-key="energy_in_comment"><i></i></label></div>
     </section>
 
-    <section class="card stCard">
-      <h2>MyTag groups</h2>
-      <p class="stNote">Backspins works out which group is which from what is in it. Choose one only if it guessed wrong.</p>
+    <section class="card stCard" id="stVocab">
+      <h2>Your vocabulary</h2>
+      <p class="stNote">Your MyTag groups and genres. Backspins works out which group is which from what is in it — choose one here only if it guessed wrong.</p>
       <div class="stRowS"><div class="stL">Kind of night<small>What Sets offers to start from.</small></div>
         <select class="sel" id="setTypeBank" data-key="type_bank"></select></div>
       <div class="stRowS"><div class="stL">Mood<small>The directions Sets moves in.</small></div>
@@ -2721,17 +2762,15 @@
         <div class="stChecks" id="setIgnored" translate="no"></div></div>
       <div class="stRowS"><div class="stL">No MyTags yet?<small>Add a ready-made vocabulary: 25 tags in four groups.</small></div>
         <button class="ghost" id="setVocab" type="button">Starter vocabulary</button></div>
-    </section>
-
-    <section class="card stCard">
-      <h2>Genre spellings</h2>
+      <h3 class="stSub">Genre spellings</h3>
       <p class="stNote">Your own corrections, applied when tracks come in: "Reggeaton" → "Reggaeton".</p>
       <div id="setFixes"></div>
       <button class="ghost" id="setFixAdd" type="button">Add a correction</button>
     </section>
 
-    <section class="card stCard">
-      <h2>Import</h2>
+    <section class="card stCard" id="stImport">
+      <h2>Importing music</h2>
+      <p class="stNote">Where new music comes from, and where the converted and renamed files go before they enter rekordbox.</p>
       <div class="stRowS"><div class="stL">New music folder<small>Where Import starts.</small></div>
         <div class="stCtl"><input type="text" id="setSource" data-key="source_folder" spellcheck="false" placeholder="choose a folder">
           <button class="ghost" data-pick="setSource" type="button">Choose…</button></div></div>
@@ -2742,8 +2781,9 @@
         <label class="stSwitch"><input type="checkbox" id="setMove" data-key="move_processed"><i></i></label></div>
     </section>
 
-    <section class="card stCard">
-      <h2>Backups</h2>
+    <section class="card stCard" id="stBackups">
+      <h2>Backups and storage</h2>
+      <p class="stNote">A full copy of your library is kept every hour it changes, and before every write.</p>
       <div class="stRowS"><div class="stL">Library backups may use<small>Oldest go first; the two newest always stay.</small></div>
         <select class="sel" id="setBudget">
           <option value="0">No limit</option><option value="1024">1 GB</option><option value="2048">2 GB</option>
@@ -2753,10 +2793,12 @@
         <button class="ghost" id="setOpenData" type="button">Your data</button></div>
     </section>
 
-    <section class="card stCard">
+    <section class="card stCard" id="stHelp">
       <h2>Help</h2>
       <div class="stRowS"><div class="stL">How it works<small>The short animated tour.</small></div>
         <button class="ghost" id="setTour" type="button">Show the tour</button></div>
+      <div class="stRowS"><div class="stL">Something not right?<small>Tell us on GitHub, with what you did and what you saw.</small></div>
+        <button class="ghost" id="setIssue" type="button">Report a problem</button></div>
       <div class="stRowS"><div class="stL">Settings file<small id="setFile"></small></div>
         <button class="ghost" id="setReveal" type="button">Show in folder</button></div>
     </section>
@@ -3044,6 +3086,12 @@
     $('viewCompat').classList.toggle('hidden', sub !== 'compat');
     $('viewTags').classList.toggle('hidden', sub !== 'tags');
     $('viewArt').classList.toggle('hidden', sub !== 'art');
+    $('viewFolders').classList.toggle('hidden', sub !== 'folders');
+    // The rail: Health's entries, and Settings for both of its pages.
+    [].forEach.call(document.querySelectorAll('.rail [data-san]'), function(b){
+      b.classList.toggle('on', sub === b.dataset.san);
+    });
+    $('tabSettings').classList.toggle('on', which === 'settings' || which === 'backups');
     $('viewFlac').classList.toggle('hidden', sub !== 'compat');
     // The "From the set" player is a Sets thing; collapse to one player
     // elsewhere. The Browsing player stays wherever you preview a track.
@@ -3077,6 +3125,20 @@
   });
   $('subTags').addEventListener('click', function(){ sanSetSub('tags'); });
   $('subArt').addEventListener('click', function(){ sanSetSub('art'); awLoad(); });
+  $('subFolders').addEventListener('click', function(){
+    sanSetSub('folders');
+    fdLoad().then(function(j){ if (j && !j.busy && !j.result && !j.error) fdScan(); });
+  });
+  // Health's rail entries press the same buttons the old sub-tab bar had.
+  [].forEach.call(document.querySelectorAll('.rail [data-san]'), function(b){
+    b.addEventListener('click', function(){
+      var k = b.dataset.san;
+      $('sub' + k.charAt(0).toUpperCase() + k.slice(1)).click();
+    });
+  });
+  [].forEach.call(document.querySelectorAll('.stTabs [data-go]'), function(b){
+    b.addEventListener('click', function(){ $(b.dataset.go).click(); });
+  });
 
   // ── the tag cleaner ────────────────────────────────────────────────────
   // ⚠ Look first, decide, then act. It edits files in the library, so it
@@ -6623,7 +6685,7 @@
 
   function sanSetSub(which){
     SAN_TAB = which;
-    ['dupes','qual','compat','tags','art'].forEach(function(k){
+    ['dupes','folders','qual','compat','tags','art'].forEach(function(k){
       $('sub' + k.charAt(0).toUpperCase() + k.slice(1))
         .classList.toggle('on', k === which);
     });
@@ -11615,7 +11677,6 @@
 
   $('tabBackups').addEventListener('click', function(){
     setTab('backups'); bkLoad(); acLoad(); stLoad();
-    fdLoad().then(function(j){ if (j && !j.busy && !j.result && !j.error) fdScan(); });
   });
   setTimeout(function(){ acLoad(); stLoad(); }, 4000);
   $('bkNow').addEventListener('click', function(){
@@ -12406,7 +12467,7 @@
   function setLoad(){
     return Promise.all([fetch('/api/settings').then(function(r){ return r.json(); }),
                         fetch('/api/settings/context').then(function(r){ return r.json(); })])
-      .then(function(a){ SETS.cfg = a[0]; SETS.ctx = a[1]; setRender(); })
+      .then(function(a){ SETS.cfg = a[0]; SETS.ctx = a[1]; setRender(); updLoad(); })
       .catch(function(){ setFlash('Could not read the settings.', true); });
   }
   $('tabSettings').addEventListener('click', function(){ setTab('settings'); setLoad(); });
@@ -12464,6 +12525,61 @@
   $('setOpenData').addEventListener('click', function(){ $('tabBackups').click(); });
   $('setTour').addEventListener('click', function(){ if (window.bsTour) window.bsTour(); });
   $('setReveal').addEventListener('click', function(){ post('/api/storage/reveal', {where: 'app'}); });
+  // ── updates: is there a newer Backspins (updates.py) ──
+  var UPD2 = {st: null};
+  // Built from pieces with data in them, so translated here, piece by piece.
+  function tf(key){
+    var out = window.I18N ? I18N.t(key) : key, args = [].slice.call(arguments, 1);
+    return out.replace(/\{(\d)\}/g, function(_, i){ return args[+i]; });
+  }
+  function updAgo(stamp){
+    if (!stamp) return '';
+    var s = (Date.now() - new Date(stamp.replace(' ', 'T')).getTime()) / 1000;
+    if (s < 90) return tf('just now');
+    if (s < 3600) return tf('{0} min ago', Math.round(s / 60));
+    if (s < 2 * 86400) return tf('{0} h ago', Math.round(s / 3600));
+    return tf('{0} days ago', Math.round(s / 86400));
+  }
+  function updPaint(st){
+    UPD2.st = st;
+    var mine = st.source ? tf('Running from source') : tf('This is v{0}', st.version);
+    var latest = st.latest ? tf('latest: {0}', st.latest) : tf('latest: not checked yet');
+    var when = st.checked ? ' · ' + tf('checked {0}', updAgo(st.checked)) : '';
+    if (document.getElementById('setVer')) {
+      $('setVer').textContent = st.available ? tf('{0} is out — you have v{1}.', st.latest, st.version)
+        : mine + ' · ' + latest + when + (st.error && !st.latest ? ' · ' + tf('could not reach GitHub') : '');
+      $('setVer').classList.toggle('good', !!st.available);
+      $('setUpdGet').classList.toggle('hidden', !st.available);
+      $('setUpdGet').textContent = st.available ? tf('Download {0}', st.latest) : tf('Download');
+      $('setUpdAuto').checked = st.auto !== false;
+    }
+    var r = $('railNew');
+    r.classList.toggle('hidden', !st.available);
+    if (st.available) r.innerHTML = bkEsc(tf('New version {0}', st.latest)) + '<small>' + bkEsc(tf('Download it — one click')) + '</small>';
+  }
+  function updLoad(){
+    return fetch('/api/update').then(function(r){ return r.json(); }).then(updPaint).catch(function(){});
+  }
+  $('railNew').addEventListener('click', function(){ post('/api/update/open', {}); });
+  $('setUpdGet').addEventListener('click', function(){ post('/api/update/open', {}); });
+  $('setUpdCheck').addEventListener('click', function(){
+    var b = this; b.disabled = true; $('setVer').textContent = tf('Checking…');
+    post('/api/update/check', {}).then(function(st){
+      b.disabled = false; updPaint(st);
+      setFlash(st.error && !st.latest ? tf('Could not reach GitHub.') : st.available ? tf('{0} is out.', st.latest) : tf('You have the latest.'), !!(st.error && !st.latest));
+    }).catch(function(){ b.disabled = false; });
+  });
+  $('setUpdAuto').addEventListener('change', function(){ setSave({check_updates: this.checked}); });
+  $('setIssue').addEventListener('click', function(){ post('/api/update/open', {page: 'issues'}); });
+  $('stJump').addEventListener('click', function(e){
+    var a = e.target.closest('a[href^="#"]'); if (!a) return;
+    e.preventDefault();
+    var t = document.getElementById(a.getAttribute('href').slice(1));
+    if (t) t.scrollIntoView({behavior: 'smooth', block: 'start'});
+  });
+  setTimeout(updLoad, 5000);
+  setInterval(updLoad, 30 * 60 * 1000);
+
 
   var WANT = {'/sets': 'sets', '/sets2': 'sets', '/find': 'find',
               '/browse': 'browse', '/library': 'browse',

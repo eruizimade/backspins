@@ -120,6 +120,9 @@ DEFAULTS = {
     # the age tiers in library_backup.py decide). The oldest copies go first,
     # and the two newest always stay.
     'backup_budget_mb': 2048,
+    # Look for a newer Backspins on GitHub now and then (updates.py). Only the
+    # public release number is read; nothing about you is sent.
+    'check_updates': True,
 }
 
 
