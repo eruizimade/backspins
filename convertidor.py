@@ -3437,7 +3437,9 @@ def _playlist_tree():
 def save_set_playlist(name, ids, playlist_id=None):
     """What POST /api/playlist does, for a set made on the phone."""
     import rekordbox_merge as rm
-    res = rm.create_set_playlist(name, ids, playlist_id=playlist_id)
+    # ⚠ A backup at most every ten minutes from here: sets from the phone come
+    # in bursts, and a full copy of master.db per set could fill the disk.
+    res = rm.create_set_playlist(name, ids, playlist_id=playlist_id, backup_max_age=600)
     with LOCK:
         RB_LIBRARY.clear()
         RB_ALL.clear()
@@ -3460,6 +3462,7 @@ def main():
     # analysis' job file among them) write into it before anything else
     # would have made it.
     os.makedirs(prefs.APP_DIR, exist_ok=True)
+    prefs.tighten()
     BOOT['stamp'] = code_stamp()
     STATE['converter'] = detect_converter()
     warm_imports()

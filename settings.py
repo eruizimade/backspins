@@ -205,12 +205,26 @@ def save(values):
     for k, v in (values or {}).items():
         if k in DEFAULTS:
             current[k] = v
-    os.makedirs(APP_DIR, exist_ok=True)
+    os.makedirs(APP_DIR, mode=0o700, exist_ok=True)
     tmp = SETTINGS_FILE + '.part'
-    with open(tmp, 'w', encoding='utf-8') as fh:
+    # ⚠ Yours alone (0600): it can hold the key this Mac uses for the cloud,
+    # and other accounts on the same computer have no business reading it.
+    fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, 'w', encoding='utf-8') as fh:
         json.dump(current, fh, indent=2, ensure_ascii=False)
     os.replace(tmp, SETTINGS_FILE)          # never a half-written file
     return load()
+
+
+def tighten():
+    """The app folder and its settings readable by you alone — for folders
+    made before this was the rule. Best-effort."""
+    for path, mode in ((APP_DIR, 0o700), (SETTINGS_FILE, 0o600)):
+        try:
+            if os.path.exists(path) and os.name != 'nt':
+                os.chmod(path, mode)
+        except OSError:
+            pass
 
 
 def find_library():

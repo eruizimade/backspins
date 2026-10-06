@@ -140,7 +140,7 @@ def _open_db(db_path=None):
                               key=settings.library_key())
 
 
-def create_set_playlist(name, content_ids, db_path=None, playlist_id=None):
+def create_set_playlist(name, content_ids, db_path=None, playlist_id=None, backup_max_age=None):
     """Save a set to rekordbox: as a NEW list, or over an existing one.
 
     The order is fixed by writing `TrackNo` by hand (1..N) instead of using
@@ -154,7 +154,9 @@ def create_set_playlist(name, content_ids, db_path=None, playlist_id=None):
     # ⚠ Overwriting with an empty list would wipe the playlist.
     if not content_ids:
         raise RuntimeError('There are no tracks to save.')
-    backup = backup_db(db_path)
+    # `backup_max_age`: reuse a recent backup (the phone's sets arrive in
+    # bursts, and a full copy of the library each would fill the disk).
+    backup = backup_db(db_path, max_age=backup_max_age)
 
     db = _open_db(db_path)
     try:
