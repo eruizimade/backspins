@@ -28,6 +28,9 @@ works. On macOS, conversion falls back to the system's own `afconvert`.
 
 ## What it does
 
+The first time it opens, a short animated tour shows how it all fits together
+(**How it works** in the sidebar plays it again).
+
 | Tab | What it is for |
 |---|---|
 | **Inbox** | Your tagging queue. Listen, rate, set energy and tick your MyTags one track at a time, with the three-band waveform a CDJ shows. On macOS there is also a menu bar icon, so you can tag while another window is in front. |

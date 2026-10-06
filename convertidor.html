@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="ca">
+<html lang="en">
 <head>
 <script>
   /* ⚠ Before the stylesheet paints anything. A saved dark choice applied from
@@ -1646,6 +1646,231 @@
   .bkChip.db{border-color:var(--line2)}
   .bkChip.txt{color:var(--ok-ink);border-color:var(--ok-soft);background:var(--ok-soft)}
   .bkWhy{color:var(--faint);font-size:11.5px}
+  /* ══ the tour: how Backspin works, animated ═════════════════════════════
+     Shown once on first launch and from "How it works" in the rail. Every
+     scene is rebuilt when its step opens, so its animation plays from the
+     start each time. Brand orange, the app's own tokens for everything else. */
+  @property --tvp{syntax:'<number>';inherits:false;initial-value:0}
+  .tour{position:fixed;inset:0;z-index:90;display:grid;place-items:center;padding:16px;
+        background:color-mix(in srgb, var(--bg) 55%, transparent);
+        -webkit-backdrop-filter:blur(22px) saturate(1.4);backdrop-filter:blur(22px) saturate(1.4);
+        animation:tvFade .35s ease both}
+  .tour.hidden{display:none}
+  .tour{--bs:#ff6a2b;--bs2:#ffb347;--bsg:linear-gradient(135deg,var(--bs),var(--bs2))}
+  .tourCard{position:relative;width:min(980px,100%);max-height:calc(100vh - 32px);display:grid;
+            grid-template-columns:1.15fr 1fr;overflow:hidden;border-radius:22px;background:var(--card);
+            border:1px solid var(--line);box-shadow:0 30px 80px rgba(0,0,0,.28),0 2px 8px rgba(0,0,0,.12);
+            animation:tvRise .5s cubic-bezier(.2,.9,.25,1.1) both}
+  .tourStage{position:relative;min-height:440px;overflow:hidden;display:grid;place-items:center;
+             background:radial-gradient(120% 90% at 20% 10%,color-mix(in srgb,var(--bs) 22%,var(--deck)) 0%,var(--deck) 55%),
+                        var(--deck);border-right:1px solid var(--line)}
+  .tourStage::after{content:'';position:absolute;inset:0;pointer-events:none;
+                    background:radial-gradient(60% 50% at 85% 95%,color-mix(in srgb,var(--bs2) 16%,transparent),transparent)}
+  .tourText{display:flex;flex-direction:column;padding:34px 34px 24px;min-width:0}
+  .tourKicker{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+              background:var(--bsg);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .tourText h2{font-size:28px;line-height:1.15;letter-spacing:-.02em;margin:10px 0 12px;font-weight:700}
+  .tourText p{font-size:14.5px;line-height:1.6;color:var(--dim);margin:0 0 10px}
+  .tourText p b{color:var(--text);font-weight:600}
+  .tourText .tourAnim > *{animation:tvUp .55s cubic-bezier(.2,.8,.2,1) both}
+  .tourText .tourAnim > :nth-child(2){animation-delay:.06s}
+  .tourText .tourAnim > :nth-child(3){animation-delay:.12s}
+  .tourText .tourAnim > :nth-child(4){animation-delay:.18s}
+  .tourText .tourAnim > :nth-child(5){animation-delay:.24s}
+  .tourFoot{margin-top:auto;padding-top:22px;display:flex;align-items:center;gap:10px}
+  .tourDots{display:flex;gap:6px;flex:1}
+  .tourDots button{width:8px;height:8px;padding:0;border-radius:99px;border:0;cursor:pointer;
+                   background:var(--line2);transition:width .3s ease,background .3s ease}
+  .tourDots button.on{width:26px;background:var(--bsg)}
+  .tourBtn{font:inherit;font-size:13.5px;font-weight:600;border-radius:10px;padding:9px 16px;cursor:pointer;
+           border:1px solid var(--line2);background:transparent;color:var(--text);transition:transform .15s ease,background .2s}
+  .tourBtn:hover{background:var(--hover)}
+  .tourBtn:active{transform:scale(.97)}
+  .tourBtn.go{border:0;color:#fff;background:var(--bsg);box-shadow:0 6px 18px color-mix(in srgb,var(--bs) 40%,transparent)}
+  .tourBtn.go:hover{filter:brightness(1.06)}
+  .tourSkip{position:absolute;top:14px;right:14px;z-index:2;font-size:12.5px;color:var(--faint);background:none;border:0;
+            cursor:pointer;padding:6px 10px;border-radius:8px}
+  .tourSkip:hover{background:var(--hover);color:var(--text)}
+  .tourKeys{font-size:11.5px;color:var(--faint);margin-top:12px}
+  .tourKeys kbd{font:inherit;font-size:11px;border:1px solid var(--line2);border-radius:5px;padding:0 5px;margin:0 1px}
+  .tourProg{position:absolute;left:0;top:0;grid-column:1 / -1;grid-row:1;z-index:3;height:3px;background:var(--bsg);transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .railHow{font:inherit;font-size:12px;color:var(--dim);background:none;border:0;text-align:left;cursor:pointer;
+           padding:6px 8px;border-radius:8px;display:flex;align-items:center;gap:8px;width:100%}
+  .railHow:hover{background:var(--hover);color:var(--text)}
+  .railHow i{width:16px;height:16px;border-radius:99px;background:var(--bsg,linear-gradient(135deg,#ff6a2b,#ffb347));
+             display:grid;place-items:center;color:#fff;font-style:normal;font-size:10px;font-weight:700}
+  @media (max-width:760px){
+    .tour{place-items:start center}
+    .tourCard{grid-template-columns:1fr;overflow:auto}
+    .tourStage{min-height:280px;border-right:0;border-bottom:1px solid var(--line)}
+    .tourStage > *{zoom:.78}
+    .tourText{padding:22px}
+    .tourText h2{font-size:23px}
+  }
+  @media (max-height:700px){.tourStage{min-height:380px}.tourText{padding-top:26px}}
+  @keyframes tvFade{from{opacity:0}to{opacity:1}}
+  @keyframes tvRise{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+  @keyframes tvUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes tvPop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.08)}100%{opacity:1;transform:scale(1)}}
+  @keyframes tvDrop{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+  @keyframes tvPulse{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--bs) 45%,transparent)}
+                     50%{box-shadow:0 0 0 10px transparent}}
+
+  /* 1 · the record and its backspin */
+  .tv-rec{position:relative;width:250px;height:250px}
+  .tv-disc{position:absolute;inset:28px;border-radius:50%;
+           background:radial-gradient(circle,var(--bs) 0 19%,#14161b 19.5% 21%,transparent 21.5%),
+                      repeating-radial-gradient(circle,#1d2027 0 3px,#262a33 3px 4px);
+           box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+           animation:tvSpin 4.2s cubic-bezier(.45,.05,.3,1) infinite}
+  .tv-disc::before{content:'';position:absolute;inset:0;border-radius:50%;
+                   background:conic-gradient(from 20deg,transparent 0 40deg,rgba(255,255,255,.10) 55deg,transparent 75deg 220deg,rgba(255,255,255,.07) 235deg,transparent 250deg)}
+  .tv-disc::after{content:'';position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;background:#14161b}
+  .tv-arrow{position:absolute;inset:0;overflow:visible}
+  .tv-arrow path{fill:none;stroke:var(--text);stroke-width:7;stroke-linecap:round;stroke-dasharray:520;stroke-dashoffset:520;
+                 animation:tvDraw 4.2s ease-in-out infinite}
+  .tv-arrow polygon{fill:var(--text);opacity:0;animation:tvHead 4.2s ease-in-out infinite}
+  @keyframes tvSpin{0%{transform:rotate(0)}55%{transform:rotate(540deg)}72%{transform:rotate(330deg)}100%{transform:rotate(360deg)}}
+  @keyframes tvDraw{0%,50%{stroke-dashoffset:520}72%,92%{stroke-dashoffset:0}100%{stroke-dashoffset:-520}}
+  @keyframes tvHead{0%,66%{opacity:0}72%,92%{opacity:1}100%{opacity:0}}
+
+  /* 2 · safe by design: edits queue while rekordbox is open */
+  .tv-safe{width:340px;display:flex;flex-direction:column;gap:22px;align-items:center}
+  .tv-pill{position:relative;height:30px;width:190px;border-radius:99px;background:var(--card);border:1px solid var(--line);
+           box-shadow:var(--sh1);font-size:12.5px;font-weight:600}
+  .tv-pill span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px}
+  .tv-pill i{width:8px;height:8px;border-radius:50%}
+  .tv-pill .o i{background:var(--err)} .tv-pill .c i{background:#34c759}
+  .tv-pill .o{animation:tvOff 6s infinite} .tv-pill .c{animation:tvOn 6s infinite}
+  @keyframes tvOff{0%,45%{opacity:1}50%,100%{opacity:0}}
+  @keyframes tvOn{0%,45%{opacity:0}50%,95%{opacity:1}100%{opacity:0}}
+  .tv-lane{position:relative;width:340px;height:120px}
+  .tv-box{position:absolute;top:22px;width:92px;height:76px;border-radius:14px;background:var(--card);border:1px solid var(--line);
+          box-shadow:var(--sh1);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;
+          font-size:11px;color:var(--faint);font-weight:600}
+  .tv-box.q{left:58px}.tv-box.db{right:0}
+  .tv-box.db::before{content:'';position:absolute;top:12px;width:42px;height:34px;border-radius:50%/10px;
+                     background:linear-gradient(var(--bs),var(--bs2));opacity:.9}
+  .tv-box.q::before{content:'⏸';position:absolute;top:16px;font-size:22px;color:var(--faint)}
+  .tv-chip2{position:absolute;left:0;top:44px;padding:4px 9px;border-radius:99px;font-size:11.5px;font-weight:600;
+            background:var(--bsg);color:#fff;box-shadow:0 4px 10px rgba(0,0,0,.18);animation:tvFlow 6s infinite both}
+  .tv-chip2:nth-child(2){animation-delay:.35s}.tv-chip2:nth-child(3){animation-delay:.7s}
+  @keyframes tvFlow{0%{opacity:0;transform:translateX(-30px)}8%{opacity:1}22%,46%{transform:translateX(78px)}
+                    62%,88%{transform:translateX(262px);opacity:1}96%,100%{transform:translateX(262px);opacity:0}}
+  .tv-shield{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:12px;
+             background:var(--ok-soft);color:var(--ok-ink);animation:tvPop .5s 3.2s both}
+
+  /* 3 · inbox: tag while you listen */
+  .tv-inbox{width:360px;display:flex;flex-direction:column;gap:16px}
+  .tv-wave{position:relative;height:96px;display:flex;align-items:center;gap:2px;padding:0 4px;border-radius:14px;
+           background:var(--card);border:1px solid var(--line);box-shadow:var(--sh1);overflow:hidden}
+  .tv-wave b{flex:1;border-radius:2px;background:linear-gradient(var(--w-high),var(--w-mid) 45%,var(--w-low));
+             transform-origin:center;animation:tvBar 1.6s ease-in-out infinite alternate}
+  @keyframes tvBar{from{transform:scaleY(.82)}to{transform:scaleY(1)}}
+  .tv-head{position:absolute;top:8px;bottom:8px;width:2px;background:var(--text);left:6%;animation:tvPlay 6s linear infinite}
+  @keyframes tvPlay{from{left:4%}to{left:96%}}
+  .tv-stars{display:flex;gap:6px;font-size:20px;color:var(--line2)}
+  .tv-stars span{animation:tvStar .35s both}
+  @keyframes tvStar{from{color:var(--line2);transform:scale(.7)}to{color:var(--bs);transform:scale(1)}}
+  .tv-tags{display:flex;flex-wrap:wrap;gap:7px}
+  .tv-tag{font-size:12px;padding:5px 10px;border-radius:99px;border:1px solid var(--line2);color:var(--dim);background:var(--card)}
+  .tv-tag.on{animation:tvTagOn .4s both}
+  @keyframes tvTagOn{to{background:var(--bsg);border-color:transparent;color:#fff}}
+
+  /* 4 · your words */
+  .tv-words{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:380px}
+  .tv-col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 12px;box-shadow:var(--sh1)}
+  .tv-col h4{margin:0 0 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .tv-col div{display:flex;flex-wrap:wrap;gap:5px}
+  .tv-col span{font-size:11.5px;padding:3px 8px;border-radius:99px;background:var(--field);animation:tvDrop .4s both}
+
+  /* 5 · health: duplicates and compatibility */
+  .tv-health{display:flex;flex-direction:column;gap:22px;align-items:center;width:360px}
+  .tv-dupes{position:relative;height:110px;width:340px}
+  .tv-dup{position:absolute;top:10px;width:150px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+          box-shadow:var(--sh1);font-size:12px}
+  .tv-dup small{display:block;color:var(--faint);margin-top:3px}
+  .tv-dup.a{left:0;animation:tvLoser 4.5s infinite}
+  .tv-dup.b{right:0;animation:tvKeeper 4.5s infinite}
+  @keyframes tvLoser{0%,25%{transform:none;opacity:1}55%{transform:translateX(95px) scale(.9);opacity:0}100%{opacity:0;transform:translateX(95px)}}
+  @keyframes tvKeeper{0%,25%{transform:none}55%,100%{transform:translateX(-95px)}}
+  .tv-kept{position:absolute;left:50%;bottom:0;transform:translateX(-50%);font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:99px;
+           background:var(--ok-soft);color:var(--ok-ink);white-space:nowrap;animation:tvKept 4.5s infinite}
+  @keyframes tvKept{0%,50%{opacity:0;transform:translate(-50%,6px)}60%,95%{opacity:1;transform:translate(-50%,0)}100%{opacity:0}}
+  .tv-rings{display:flex;gap:18px}
+  .tv-ring{--tvp:0;width:88px;height:88px;border-radius:50%;display:grid;place-items:center;
+           background:conic-gradient(var(--bs) calc(var(--tvp)*1%),var(--field) 0);animation:tvFill 1.6s .3s cubic-bezier(.2,.8,.2,1) both}
+  .tv-ring div{width:68px;height:68px;border-radius:50%;background:var(--deck);display:grid;place-items:center;text-align:center;
+               font-size:15px;font-weight:700;line-height:1.1}
+  .tv-ring small{display:block;font-size:9.5px;font-weight:600;color:var(--faint)}
+  @keyframes tvFill{from{--tvp:0}}
+
+  /* 6 · find: check a playlist */
+  .tv-pl{width:360px;background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh1);overflow:hidden}
+  .tv-pl header{padding:12px 14px;font-size:12.5px;font-weight:700;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .tv-pl header i{width:16px;height:16px;border-radius:50%;background:#1ed760}
+  .tv-row{display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line);font-size:12.5px;animation:tvUp .4s both}
+  .tv-row span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tv-row em{font-style:normal;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;animation:tvPop .4s both}
+  .tv-row em.y{background:var(--ok-soft);color:var(--ok-ink)}
+  .tv-row em.n{background:var(--field);color:var(--faint)}
+  .tv-row em.m{background:var(--warn-soft);color:var(--warn-ink)}
+  .tv-make{margin:12px 14px;padding:8px 12px;border-radius:10px;text-align:center;font-size:12.5px;font-weight:600;color:#fff;
+           background:var(--bsg);animation:tvPop .4s 2.2s both,tvPulse 1.8s 2.8s infinite}
+
+  /* 7 · sets: key, tempo and feel */
+  .tv-sets{display:flex;align-items:center;gap:26px}
+  .tv-wheel{position:relative;width:170px;height:170px;border-radius:50%;animation:tvTurn 18s linear infinite;
+            background:conic-gradient(#e85d75,#f08a4b,#f4c04e,#c8d84e,#7fd06a,#4cc59a,#45b8d0,#4c8dff,#7a6cf0,#a65fe0,#d65cc0,#e85d75)}
+  .tv-wheel::after{content:'';position:absolute;inset:34px;border-radius:50%;background:var(--deck)}
+  .tv-wheel i{position:absolute;left:50%;top:50%;width:22px;height:22px;margin:-11px;border-radius:50%;z-index:1;
+              font-style:normal;font-size:10px;font-weight:700;display:grid;place-items:center;color:#fff;
+              text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .tv-wheel i.now{background:var(--card);color:var(--text);text-shadow:none;box-shadow:0 0 0 3px var(--bs),0 6px 14px rgba(0,0,0,.3);
+                  animation:tvPulse 1.8s infinite}
+  .tv-wheel i.near{box-shadow:0 0 0 2px #fff}
+  .tv-wheel i span{display:block;animation:tvTurn 18s linear infinite reverse}
+  @keyframes tvTurn{to{transform:rotate(360deg)}}
+  .tv-chain{display:flex;flex-direction:column;gap:10px}
+  .tv-step{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+           box-shadow:var(--sh1);font-size:12px;width:170px;animation:tvUp .45s both}
+  .tv-step b{font-size:11px;padding:2px 6px;border-radius:6px;background:var(--accent-soft);color:var(--accent-ink)}
+  .tv-step small{margin-left:auto;color:var(--faint)}
+  .tv-energy{width:170px;height:40px;overflow:visible}
+  .tv-energy path{fill:none;stroke:var(--bs);stroke-width:3;stroke-linecap:round;stroke-dasharray:240;stroke-dashoffset:240;
+                  animation:tvLine 1.6s 1.4s ease forwards}
+  @keyframes tvLine{to{stroke-dashoffset:0}}
+
+  /* 8 · teach */
+  .tv-teach{position:relative;width:360px;height:260px}
+  .tv-dot{position:absolute;width:14px;height:14px;margin:-7px;border-radius:50%;transition:left 1.4s cubic-bezier(.3,.8,.2,1),top 1.4s cubic-bezier(.3,.8,.2,1),background .8s}
+  .tv-score{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:12.5px;color:var(--dim)}
+  .tv-score b{font-size:30px;display:block;color:var(--text);letter-spacing:-.02em}
+  .tv-axis{position:absolute;left:10px;right:10px;top:150px;height:1px;background:var(--line2);opacity:0;transition:opacity .6s 1s}
+  .tv-axis.on{opacity:1}
+  .tv-axis span{position:absolute;top:8px;font-size:10.5px;color:var(--faint)}
+
+  /* 9 · backups */
+  .tv-bk{display:flex;flex-direction:column;gap:8px;width:330px}
+  .tv-bkrow{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line);
+            box-shadow:var(--sh1);font-size:12.5px;animation:tvDrop .45s both}
+  .tv-bkrow i{width:10px;height:10px;border-radius:50%;background:var(--bsg)}
+  .tv-bkrow small{margin-left:auto;color:var(--faint)}
+  .tv-bkrow:first-child{border-color:color-mix(in srgb,var(--bs) 55%,var(--line))}
+
+  /* 10 · ready */
+  .tv-ready{display:flex;flex-direction:column;align-items:center;gap:18px}
+  .tv-ready .tv-rec{width:180px;height:180px}
+  .tv-ready .tv-disc{inset:20px}
+  .tv-confetti{position:absolute;inset:0;pointer-events:none}
+  .tv-confetti i{position:absolute;top:-10px;width:7px;height:12px;border-radius:2px;animation:tvFall linear both}
+  @keyframes tvFall{to{transform:translateY(480px) rotate(540deg);opacity:.2}}
+
+  @media (prefers-reduced-motion:reduce){
+    .tour *, .tour{animation-duration:.001s !important;animation-iteration-count:1 !important;transition:none !important}
+    .tv-arrow path{stroke-dashoffset:0}.tv-arrow polygon{opacity:1}
+    .tv-confetti{display:none}
+  }
 </style>
 </head>
 <body>
@@ -1675,6 +1900,7 @@
     <button class="railUpdate hidden" id="railUpdate" type="button"></button>
     <div class="rbState" id="rbState"><i></i><div><span id="rbStateT">rekordbox</span><small
          id="rbStateS"></small></div></div>
+    <button type="button" class="railHow" id="railHow"><i>?</i>How it works</button>
     <div class="themepick" id="themePick" title="Appearance">
       <button type="button" data-theme="auto" title="Follow the Mac">Auto</button>
       <button type="button" data-theme="light" title="Light">Light</button>
@@ -8462,6 +8688,7 @@
       $('vcMsg').textContent = j.adds ? '' : 'Your library already has all of it.';
     }).catch(function(){ body.textContent = 'Could not read the library.'; });
   }
+  window.vcOpen = vcOpen;            // the tour's last step offers it
   function vcClose(){ $('vcOverlay').classList.add('hidden'); }
   $('vcClose').addEventListener('click', vcClose);
   $('vcOverlay').addEventListener('click', function(e){ if (e.target === this) vcClose(); });
@@ -11763,6 +11990,258 @@
   tgCmdWaiter();          // listen for menu-bar orders, held open
 })();
 
+</script>
+<script>
+/* ══ the tour ════════════════════════════════════════════════════════════
+   How Backspin works, one animated step at a time. Opens by itself the first
+   time, and again from "How it works" in the rail. Its own script, so it can
+   never take the app down with it. */
+(function(){
+  var SEEN = 'bs_tour_seen_v1';
+  function el(html){ var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
+  function seeded(i){ var x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x); }
+
+  function record(){
+    return '<div class="tv-rec"><div class="tv-disc"></div>'
+      + '<svg class="tv-arrow" viewBox="0 0 250 250"><path d="M181 222 A112 112 0 1 0 19.8 163.3"/>'
+      + '<polygon points="27,184 7,167 32,158"/></svg></div>';
+  }
+
+  var STEPS = [
+    {kicker: 'Welcome', title: 'This is Backspin',
+     body: ['Look after your rekordbox library and get your sets ready faster.',
+            'Everything runs on this computer. <b>Your music never leaves it.</b>'],
+     scene: function(){ return el(record()); }},
+
+    {kicker: 'Safe by design', title: 'rekordbox stays in charge',
+     body: ['Backspin reads your library from a copy, so rekordbox is never locked.',
+            'While rekordbox is <b>open</b>, your edits wait in a queue. The moment it <b>closes</b>, they go in, after a backup.',
+            'Nothing is ever really deleted: files go to the bin.'],
+     scene: function(){
+       return el('<div class="tv-safe">'
+         + '<div class="tv-pill"><span class="o"><i></i>rekordbox is open</span><span class="c"><i></i>rekordbox is closed</span></div>'
+         + '<div class="tv-lane"><div class="tv-box q">queue</div><div class="tv-box db">library</div>'
+         + '<span class="tv-chip2">Dark</span><span class="tv-chip2">★★★★</span><span class="tv-chip2">Peak</span></div>'
+         + '<div class="tv-shield">✓ Backed up first</div></div>');
+     }},
+
+    {kicker: 'Inbox', title: 'Tag while you listen',
+     body: ['New music lands in your <b>Inbox</b>. Play it with the three-band waveform a CDJ shows, then rate it, set its energy and tick its MyTags.',
+            'Done with one? The next is already playing. On a Mac, a menu bar icon lets you tag with any other window in front.'],
+     scene: function(){
+       var bars = '';
+       for (var i = 0; i < 64; i++) {
+         var h = 18 + Math.round(70 * Math.abs(Math.sin(i / 5.3) * 0.6 + seeded(i) * 0.4));
+         bars += '<b style="height:' + h + '%;animation-delay:' + (-seeded(i + 9) * 1.6).toFixed(2) + 's"></b>';
+       }
+       var stars = '';
+       for (var s = 0; s < 5; s++) stars += s < 4 ? '<span style="animation-delay:' + (0.8 + s * 0.18) + 's">★</span>'
+                                             : '<span style="animation:none">★</span>';
+       var tags = ['Dark', 'Acid', 'Hard', 'Groovy', 'Peak', 'Rave', 'Euphoric'], on = {0: 1, 1: 1, 4: 1, 5: 1}, t = '';
+       tags.forEach(function(n, k){
+         t += '<span class="tv-tag' + (on[k] ? ' on' : '') + '" style="animation-delay:' + (1.9 + k * 0.25) + 's">' + n + '</span>';
+       });
+       return el('<div class="tv-inbox"><div class="tv-wave">' + bars + '<span class="tv-head"></span></div>'
+         + '<div class="tv-stars">' + stars + '</div><div class="tv-tags">' + t + '</div></div>');
+     }},
+
+    {kicker: 'Your words', title: 'It speaks your vocabulary',
+     body: ['Backspin works out your MyTag groups from what is in them: which is the kind of night, which the mood, which the running order. Call them whatever you like.',
+            'No MyTags yet? Start from a <b>starter vocabulary</b>: 25 tags distilled from a year of tagging by hand.'],
+     scene: function(){
+       var cols = [['Type of set', ['Rave', 'After', 'Sunset', 'Bar', 'Party', 'Family']],
+                   ['Mood', ['Dark', 'Hard', 'Acid', 'Psychedelic', 'Tribal', 'Groovy', 'Happy', 'Euphoric', 'Emotional', 'Chill']],
+                   ['Timing', ['Opener', 'Warm-up', 'Middle', 'Peak', 'Closer']],
+                   ['Misc', ['Anthem', 'Tool']]], html = '', n = 0;
+       cols.forEach(function(c){
+         html += '<div class="tv-col"><h4>' + c[0] + '</h4><div>';
+         c[1].forEach(function(w){ html += '<span style="animation-delay:' + (0.2 + (n++) * 0.07).toFixed(2) + 's">' + w + '</span>'; });
+         html += '</div></div>';
+       });
+       return el('<div class="tv-words">' + html + '</div>');
+     }},
+
+    {kicker: 'Health', title: 'A library in good shape',
+     body: ['<b>Duplicates</b>: it compares the real quality and length, keeps the better copy and merges your cues, tags and playlists into it.',
+            '<b>Compatibility</b>: which CDJs your library plays on, and exactly which files hold you back. Plus low bitrates, shop branding in your tags and missing artwork.'],
+     scene: function(){
+       return el('<div class="tv-health"><div class="tv-dupes">'
+         + '<div class="tv-dup a">Midnight Drive<small>MP3 · 128 kbps</small></div>'
+         + '<div class="tv-dup b">Midnight Drive<small>AIFF · 1411 kbps</small></div>'
+         + '<span class="tv-kept">✓ kept the AIFF · cues and tags merged</span></div>'
+         + '<div class="tv-rings">'
+         + '<div class="tv-ring" style="--tvp:98"><div>98%<small>CDJ-3000</small></div></div>'
+         + '<div class="tv-ring" style="--tvp:91;animation-delay:.5s"><div>91%<small>NXS2</small></div></div>'
+         + '<div class="tv-ring" style="--tvp:74;animation-delay:.7s"><div>74%<small>CDJ-900</small></div></div>'
+         + '</div></div>');
+     }},
+
+    {kicker: 'Find', title: 'Check any playlist',
+     body: ['Paste a Spotify or SoundCloud link: see what you already own, what is missing and what is almost a match.',
+            'Pair songs by hand, then turn it into a rekordbox playlist, or link it to one you have and update it later.'],
+     scene: function(){
+       var rows = [['Night Drive', 'y', 'In library'], ['Lost in Tokyo', 'm', '≈ 92%'], ['Paradise Garage', 'y', 'In library'],
+                   ['Running Water', 'n', 'Missing'], ['Sunday Morning', 'y', 'In library'], ['Afterglow', 'y', 'In library']], h = '';
+       rows.forEach(function(r, i){
+         h += '<div class="tv-row" style="animation-delay:' + (0.15 + i * 0.12) + 's"><span>' + r[0] + '</span>'
+           + '<em class="' + r[1] + '" style="animation-delay:' + (0.9 + i * 0.18) + 's">' + r[2] + '</em></div>';
+       });
+       return el('<div class="tv-pl"><header><i></i>Sunset rooftop · 6 songs</header>' + h
+         + '<div class="tv-make">Make a rekordbox playlist</div></div>');
+     }},
+
+    {kicker: 'Sets', title: 'Build a set that flows',
+     body: ['Pick a kind of night and an opener. Backspin suggests what can follow by <b>key</b>, <b>tempo</b>, <b>mood</b> and what you have <b>actually mixed</b> after it before.',
+            'When it sounds right, save it to rekordbox as a playlist.'],
+     scene: function(){
+       // The Camelot wheel: 12 at the top, a step round is a fifth. You are
+       // on 8; its neighbours 7 and 9 are where you can go.
+       var marks = '', keys = ['8A', '9A', '9B', '10B'];
+       for (var n = 1; n <= 12; n++) {
+         var a = (-90 + (n % 12) * 30) * Math.PI / 180;
+         marks += '<i class="' + (n === 8 ? 'now' : (n === 7 || n === 9 ? 'near' : '')) + '" style="transform:translate('
+           + (Math.cos(a) * 68).toFixed(1) + 'px,' + (Math.sin(a) * 68).toFixed(1) + 'px)"><span>' + n + '</span></i>';
+       }
+       var steps = '', titles = ['Opener', 'Rising', 'Lift', 'Peak'], bpm = [122, 123, 124, 126];
+       keys.forEach(function(k, i){
+         steps += '<div class="tv-step" style="animation-delay:' + (0.3 + i * 0.3) + 's"><b>' + k + '</b>' + titles[i]
+           + '<small>' + bpm[i] + '</small></div>';
+       });
+       return el('<div class="tv-sets"><div class="tv-wheel">' + marks + '</div><div class="tv-chain">' + steps
+         + '<svg class="tv-energy" viewBox="0 0 170 40"><path d="M2 34 C 40 30, 60 26, 85 20 S 140 6, 168 4"/></svg></div></div>');
+     }},
+
+    {kicker: 'Teach', title: 'Teach it your ear',
+     body: ['Ask a question, like <b>"is this Acid?"</b>, and answer a few.',
+            'It listens to every track (notes, chords, timbre, groove), learns from your answers, tells you how often it is right, and ranks the whole library for you to confirm.'],
+     scene: function(){
+       var box = el('<div class="tv-teach"><div class="tv-axis"><span style="left:0">less</span><span style="right:0">more Acid</span></div>'
+         + '<div class="tv-score"><b>0%</b>right on tracks it never saw</div></div>');
+       var dots = [];
+       for (var i = 0; i < 26; i++) {
+         var d = document.createElement('i'); d.className = 'tv-dot';
+         d.style.left = (20 + seeded(i) * 320) + 'px'; d.style.top = (10 + seeded(i + 40) * 120) + 'px';
+         d.style.background = 'var(--line2)';
+         box.appendChild(d); dots.push({el: d, score: seeded(i + 80)});
+       }
+       setTimeout(function(){
+         box.querySelector('.tv-axis').classList.add('on');
+         dots.sort(function(a, b){ return a.score - b.score; }).forEach(function(o, k){
+           o.el.style.left = (20 + k * 12.4) + 'px';
+           o.el.style.top = (150 - 16 - o.score * 40) + 'px';
+           o.el.style.background = 'color-mix(in srgb, #ff6a2b ' + Math.round(o.score * 100) + '%, var(--line2))';
+         });
+         var b = box.querySelector('.tv-score b'), n = 0;
+         var tick = setInterval(function(){ n += 3; if (n >= 87) { n = 87; clearInterval(tick); } b.textContent = n + '%'; }, 40);
+       }, 700);
+       return box;
+     }},
+
+    {kicker: 'Backups', title: 'A copy every hour',
+     body: ['Whenever your library changes, a copy is kept: hourly, then daily, weekly and monthly.',
+            'Plus readable versions (rekordbox XML and JSON) that will outlive any change to rekordbox itself.'],
+     scene: function(){
+       var rows = [['Now', 'just now'], ['This morning', '09:00'], ['Yesterday', 'daily'], ['Last week', 'weekly'], ['September', 'monthly']], h = '';
+       rows.forEach(function(r, i){
+         h += '<div class="tv-bkrow" style="animation-delay:' + (0.15 + i * 0.16) + 's"><i></i>' + r[0] + '<small>' + r[1] + '</small></div>';
+       });
+       return el('<div class="tv-bk">' + h + '</div>');
+     }},
+
+    {kicker: 'Ready', title: 'You are set',
+     body: ['Start in the <b>Inbox</b> with whatever is new, or open <b>Sets</b> and pick a night.',
+            'You can see this again any time from <b>How it works</b> in the sidebar.'],
+     last: true,
+     scene: function(){
+       var c = '', cols = ['#ff6a2b', '#ffb347', '#4c8dff', '#34c759', '#a65fe0'];
+       for (var i = 0; i < 36; i++) {
+         c += '<i style="left:' + (seeded(i) * 100).toFixed(1) + '%;background:' + cols[i % 5]
+           + ';animation-duration:' + (2.2 + seeded(i + 5) * 1.8).toFixed(2) + 's;animation-delay:' + (seeded(i + 9) * 0.8).toFixed(2) + 's"></i>';
+       }
+       return el('<div class="tv-ready">' + record() + '<div class="tv-confetti">' + c + '</div></div>');
+     }}
+  ];
+
+  var tour = null, at = 0;
+
+  function build(){
+    tour = el('<div class="tour hidden" role="dialog" aria-modal="true" aria-label="How Backspin works">'
+      + '<div class="tourCard"><div class="tourProg"></div>'
+      + '<button class="tourSkip" type="button">Skip</button>'
+      + '<div class="tourStage"></div>'
+      + '<div class="tourText"><div class="tourAnim"></div>'
+      + '<div class="tourFoot"><div class="tourDots"></div>'
+      + '<button class="tourBtn back" type="button">Back</button>'
+      + '<button class="tourBtn go" type="button">Next</button></div>'
+      + '<div class="tourKeys"><kbd>←</kbd> <kbd>→</kbd> to move · <kbd>Esc</kbd> to close</div></div></div></div>');
+    document.body.appendChild(tour);
+    var dots = tour.querySelector('.tourDots');
+    STEPS.forEach(function(_, i){
+      var b = document.createElement('button'); b.type = 'button';
+      b.setAttribute('aria-label', 'Step ' + (i + 1));
+      b.addEventListener('click', function(){ show(i); });
+      dots.appendChild(b);
+    });
+    tour.querySelector('.tourSkip').addEventListener('click', close);
+    tour.querySelector('.back').addEventListener('click', function(){ show(at - 1); });
+    tour.querySelector('.go').addEventListener('click', function(){
+      if (STEPS[at].last) { close(); return; }
+      show(at + 1);
+    });
+    tour.addEventListener('click', function(e){ if (e.target === tour) close(); });
+    document.addEventListener('keydown', function(e){
+      if (!tour || tour.classList.contains('hidden')) return;
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); STEPS[at].last ? close() : show(at + 1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); show(at - 1); }
+    }, true);
+  }
+
+  function show(i){
+    at = Math.max(0, Math.min(STEPS.length - 1, i));
+    var s = STEPS[at];
+    var stage = tour.querySelector('.tourStage');
+    stage.textContent = '';
+    stage.appendChild(s.scene());
+    var text = tour.querySelector('.tourAnim');
+    text.innerHTML = '<div class="tourKicker">' + s.kicker + ' · ' + (at + 1) + ' / ' + STEPS.length + '</div>'
+      + '<h2>' + s.title + '</h2>' + s.body.map(function(p){ return '<p>' + p + '</p>'; }).join('');
+    if (s.last) {
+      var extra = document.createElement('p');
+      var vb = document.createElement('button');
+      vb.type = 'button'; vb.className = 'tourBtn'; vb.textContent = 'Set up a starter vocabulary';
+      vb.addEventListener('click', function(){
+        close();
+        if (typeof window.vcOpen === 'function') window.vcOpen();
+      });
+      extra.appendChild(vb); text.appendChild(extra);
+    }
+    tour.querySelectorAll('.tourDots button').forEach(function(b, k){ b.classList.toggle('on', k === at); });
+    tour.querySelector('.back').style.visibility = at ? 'visible' : 'hidden';
+    tour.querySelector('.go').textContent = s.last ? 'Start' : (at ? 'Next' : 'Show me');
+    tour.querySelector('.tourProg').style.width = ((at + 1) / STEPS.length * 100) + '%';
+  }
+
+  function open(){
+    if (!tour) build();
+    tour.classList.remove('hidden');
+    show(0);
+    setTimeout(function(){ tour.querySelector('.go').focus(); }, 50);
+  }
+  function close(){
+    if (!tour) return;
+    tour.classList.add('hidden');
+    tour.querySelector('.tourStage').textContent = '';       // stops the scenes
+    try { localStorage.setItem(SEEN, '1'); } catch (e) {}
+  }
+  window.bsTour = open;
+
+  var how = document.getElementById('railHow');
+  if (how) how.addEventListener('click', open);
+  var seen = false;
+  try { seen = localStorage.getItem(SEEN) === '1'; } catch (e) {}
+  if (!seen && !/[?&]notour\b/.test(location.search)) setTimeout(open, 700);
+})();
 </script>
 </body>
 </html>
