@@ -55,7 +55,9 @@ jobs:
           New-Item -ItemType Directory -Force $env:BACKSPINS_HOME | Out-Null
           # As a browser download leaves them: every file marked as coming from
           # the internet (Zone.Identifier, zone 3) — what broke the window.
-          Get-ChildItem dist\Backspins -Recurse -File | ForEach-Object {
+          # (All but Backspins.exe itself, which the person has already said
+          # "Run anyway" to — in CI nobody can answer that prompt.)
+          Get-ChildItem dist\Backspins -Recurse -File | Where-Object { $_.Name -ne 'Backspins.exe' } | ForEach-Object {
             Set-Content -LiteralPath $_.FullName -Stream Zone.Identifier -Value "[ZoneTransfer]`r`nZoneId=3"
           }
           $q = Start-Process -FilePath dist\Backspins\Backspins.exe -ArgumentList '--probe-window' -Wait -PassThru
