@@ -103,23 +103,87 @@ def stop_server(proc):
             proc.kill()
 
 
+def unblock():
+    """Take Windows' "downloaded from the internet" mark off the app's own files.
+
+    ⚠ A zip downloaded in a browser passes that mark (the Zone.Identifier
+    stream) to every file unpacked from it, and .NET then refuses to load the
+    pythonnet runtime the window needs — "Failed to resolve
+    Python.Runtime.Loader.Initialize". Removing the mark from our own files
+    is what Properties → Unblock does, one file at a time. Best-effort.
+    """
+    if os.name != 'nt' or not FROZEN:
+        return 0
+    root = os.path.dirname(sys.executable)
+    done = 0
+    for base, _, files in os.walk(root):
+        for f in files:
+            try:
+                os.remove(os.path.join(base, f) + ':Zone.Identifier')
+                done += 1
+            except OSError:
+                pass
+    return done
+
+
+def open_window(url):
+    """The app's own window. Raises when the system cannot show one."""
+    import webview
+    webview.create_window(TITLE, url, width=1400, height=900, min_size=(960, 620),
+                          background_color='#121418', text_select=True)
+    webview.start(private_mode=False)
+
+
+def browser_fallback(proc, url, why=''):
+    """No window possible: the app opens in the browser, and a small control
+    window keeps "Open" and "Quit" one click away — without it, the server
+    would run on with nothing on screen to stop it."""
+    import webbrowser
+    webbrowser.open(url)
+    try:
+        import tkinter as tk
+    except Exception:
+        print('Backspins is running at %s — Ctrl+C to stop.' % url)
+        try:
+            proc.wait()
+        except KeyboardInterrupt:
+            pass
+        return
+    root = tk.Tk()
+    root.title(TITLE)
+    root.resizable(False, False)
+    root.configure(padx=22, pady=18)
+    tk.Label(root, text='Backspins is running', font=('Segoe UI', 13, 'bold')).pack(anchor='w')
+    tk.Label(root, text='It opened in your browser. Keep this window open while you use it.',
+             font=('Segoe UI', 9)).pack(anchor='w', pady=(4, 12))
+    row = tk.Frame(root)
+    row.pack(anchor='w')
+    tk.Button(row, text='Open Backspins', width=16, command=lambda: webbrowser.open(url)).pack(side='left')
+    tk.Button(row, text='Quit', width=10, command=root.destroy).pack(side='left', padx=(8, 0))
+    if why:
+        tk.Label(root, text='(The app window could not start: %s)' % why[:120],
+                 font=('Segoe UI', 8), fg='#888888', wraplength=360, justify='left').pack(anchor='w', pady=(12, 0))
+
+    def watch():
+        if proc.poll() is not None:            # the server stopped by itself
+            root.destroy()
+        else:
+            root.after(2000, watch)
+    root.after(2000, watch)
+    root.protocol('WM_DELETE_WINDOW', root.destroy)
+    root.mainloop()
+
+
 def run_window():
+    unblock()
     proc, url = start_server()
     try:
         try:
-            import webview
-        except ImportError:
-            import webbrowser
-            webbrowser.open(url)
-            print('Backspins is running at %s — Ctrl+C to stop.' % url)
-            try:
-                proc.wait()
-            except KeyboardInterrupt:
-                pass
-            return
-        webview.create_window(TITLE, url, width=1400, height=900, min_size=(960, 620),
-                              background_color='#121418', text_select=True)
-        webview.start(private_mode=False)
+            open_window(url)
+        except Exception as e:
+            # ⚠ Never a crash for want of a window: the app works in a browser.
+            print('No app window (%s): opening in the browser.' % e)
+            browser_fallback(proc, url, str(e))
     finally:
         stop_server(proc)
 
@@ -147,6 +211,17 @@ def smoke():
             print('page:', r.status, len(page), 'bytes')
             if b'Backspins' not in page:
                 return 1
+        # The window's own machinery must load — on Windows that is pythonnet,
+        # which the "downloaded from the internet" mark used to break (CI
+        # puts that mark on every file before this runs).
+        if os.name == 'nt':
+            print('unblocked:', unblock(), 'files')
+            try:
+                import webview.platforms.winforms      # noqa: F401
+                print('window: ok')
+            except Exception as e:
+                print('window: FAILED', str(e)[:300])
+                return 1
         return 0
     finally:
         stop_server(proc)
@@ -170,6 +245,16 @@ def main():
         _quiet_streams('menubar')
         import menubar
         menubar.main()
+    elif mode == '--probe-window':
+        # Diagnosis only (CI): does the window machinery load AS THE FILES ARE,
+        # before unblock() has touched them?
+        _quiet_streams('probe')
+        try:
+            import webview.platforms.winforms      # noqa: F401
+            print('window as downloaded: ok')
+        except Exception as e:
+            print('window as downloaded: FAILED', str(e)[:200])
+        sys.exit(0)
     elif mode == '--smoke':
         _quiet_streams('smoke')          # CI prints this log afterwards
         sys.exit(smoke())
